@@ -12,6 +12,7 @@ package {
 	import flash.events.Event;
 	import flash.filters.GlowFilter;
 	import flash.geom.Point;
+	import flash.text.TextField;
 	import flash.utils.Dictionary;
 	
 	import org.libspark.flartoolkit.support.pv3d.FLARCamera3D;
@@ -43,6 +44,9 @@ package {
 		/* Initialise glow filter to add a white border around selected objects in our scene */
 		private var glow:GlowFilter = new GlowFilter(0xFFFFFF, 1, 7, 7, 30, 1, false, false);
 		
+		/* Reference to game grid */
+		private var grid:Object;
+		
 		/* Vector storing references to all markers on screen, grouped by pattern id */
 		private var markersByPatternId:Vector.<Vector.<FLARMarker>>;
 		/* Dictionary storing references to marker containers, indexed by relevant marker object */
@@ -50,6 +54,9 @@ package {
 		
 		/* Dictionary storing references to the corner nodes for each marker, indexed by relevant marker object */
 		private var nodesByMarker:Dictionary;
+		
+		/* Reference to debug output */
+		private var debugOutput:TextField;
 		
 		/* Constructor method */
 		public function PEST() {
@@ -99,52 +106,49 @@ package {
 		
 		/* Run when a new marker is recognised */
 		private function onAdded(e:FLARMarkerEvent):void {
-			/* Run method to add a new marker */
-			this.addMarker(e.marker);
+			switch (e.marker.patternId) {
+				case 3:
+					/* Run method to create game grid */
+					if (!this.grid) {
+						this.addGrid(e.marker);
+					} else {
+						this.grid.marker = e.marker;
+						this.grid.active = true;
+					}
+					break;
+				default:
+					/* Run method to add a new marker */
+					this.addMarker(e.marker);	
+			}
 		}
 		/* Run when a marker is removed */
 		private function onRemoved(e:FLARMarkerEvent):void {
-			/* Run method to remove a marker */
-			this.removeMarker(e.marker);	
+			switch (e.marker.patternId) {
+				case 3:
+					/* Grid marker is removed */
+					this.removeGrid(e.marker);
+					break;
+				default:
+					/* Run method to remove a marker */
+					this.removeMarker(e.marker);	
+			}	
 		}
-
-		/* Add a new marker to the system */
-		private function addMarker(marker:FLARMarker):void {
-			/* Store reference to list of existing markers with same pattern id */
-			var markerList:Vector.<FLARMarker> = this.markersByPatternId[marker.patternId];
-			/* Add new marker to the list */
-			markerList.push(marker);
-			
-			/* Initialise the marker container object */
-			var container:DisplayObject3D = new DisplayObject3D();
+		
+		/* Add grid to the system */
+		private function addGrid(marker:FLARMarker):void {
+			/* Grid details */
+			var gridWidth:int = 150;
+			var gridHeight:int = 150;
 			
 			/* Prepare material to be used by the Papervision cube based on pattern id */
 			var flatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(marker.patternId), getColorByPatternId(marker.patternId, true));
 			/* Add material to all sides of the cube */
 			var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat});
 			
-			/* Initialise the cube with material and set dimensions of all sides to 40 */
-			var cube:Cube = new Cube(cubeMaterials, 40, 40, 40);
-			
-			/* Shift cube upwards so it sits on top of paper instead of being cut half-way */
-			cube.z = 0.5 * 40;
-			
-			/* Scale cube to 0 so it's invisible */
-			cube.scale = 0;
-			/* Add animation which scales cube to full size */
-			Tweener.addTween(cube, {scale: 1, time:0.5, transition:"easeInOutExpo"});
-			
-			/* Set cube to be individually affected by filters */
-			cube.useOwnContainer = true;
-			/* Add cellshaded border using glow filter */
-			cube.filters = [this.glow];
-			
-			/* Add finished cube object to marker container */
-			//container.addChild(cube);
+			/* Initialise the grid container object */
+			var container:DisplayObject3D = new DisplayObject3D();
 			
 			/* Create grid */
-			var gridWidth:int = 200;
-			var gridHeight:int = 200;
 			var grid:Cube = new Cube(cubeMaterials, gridWidth, 0, gridHeight);
 			grid.visible = false;
 			container.addChild(grid);
@@ -166,6 +170,52 @@ package {
 					container.addChild(gridSeg);
 				}
 			}
+			
+			/* Add grid container to the Papervision scene */
+			this.scene3D.addChild(container);
+			
+			/* Add grid to class variable */
+			this.grid = {'container': container, 'marker': marker, 'active': true};
+		}
+		
+		/* Grid marker removed */
+		private function removeGrid(marker:FLARMarker):void {
+			this.grid.active = false;
+		}
+
+		/* Add a new marker to the system */
+		private function addMarker(marker:FLARMarker):void {
+			/* Store reference to list of existing markers with same pattern id */
+			var markerList:Vector.<FLARMarker> = this.markersByPatternId[marker.patternId];
+			/* Add new marker to the list */
+			markerList.push(marker);
+			
+			/* Initialise the marker container object */
+			var container:DisplayObject3D = new DisplayObject3D();
+			
+			/* Prepare material to be used by the Papervision cube based on pattern id */
+			var flatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(marker.patternId), getColorByPatternId(marker.patternId, true));
+			/* Add material to all sides of the cube */
+			var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat});
+			
+			/* Initialise the cube with material and set dimensions of all sides to 40 */
+			var cube:Cube = new Cube(cubeMaterials, 20, 20, 20);
+			
+			/* Shift cube upwards so it sits on top of paper instead of being cut half-way */
+			cube.z = 0.5 * 20;
+			
+			/* Scale cube to 0 so it's invisible */
+			cube.scale = 0;
+			/* Add animation which scales cube to full size */
+			Tweener.addTween(cube, {scale: 1, time:0.5, transition:"easeInOutExpo"});
+			
+			/* Set cube to be individually affected by filters */
+			cube.useOwnContainer = true;
+			/* Add cellshaded border using glow filter */
+			cube.filters = [this.glow];
+			
+			/* Add finished cube object to marker container */
+			container.addChild(cube);
 			
 			/* Add marker container to the Papervision scene */
 			this.scene3D.addChild(container);
@@ -238,11 +288,25 @@ package {
 				nodesByMarker[marker].graphics.clear();
 			}
 			
+			/* Run method to update grid */
+			this.updateGrid();
+			
 			/* Run method to update markers */
 			this.updateMarkers();
 			
+			/* Update debug output */
+			this.updateDebugOutput();
+			
 			/* Render the Papervision scene */
 			this.lre.render();
+		}
+		
+		/* Update grid method */
+		private function updateGrid():void {
+			if (this.grid && this.grid.active) {
+				/* Transform container to new position in 3d space */
+				this.grid.container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(this.grid.marker.transformMatrix);
+			}
 		}
 		
 		/* Update markers method */
@@ -293,8 +357,26 @@ package {
 					container = this.containersByMarker[marker];
 					/* Transform container to new position in 3d space */
 					container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
+					trace(container.x+', '+container.y);
 				}
 			}
+		}
+		
+		/* Update debug output */
+		private function updateDebugOutput():void {
+			if (!this.debugOutput) {
+				this.debugOutput = new TextField();
+				this.debugOutput.x = 20;
+				this.debugOutput.y = 20;
+				this.debugOutput.width = stage.stageWidth;
+				this.debugOutput.height = 100;
+				this.debugOutput.textColor = 0xFF0000;
+				
+				this.addChild(this.debugOutput);
+			}
+			
+			if (this.grid)
+				this.debugOutput.text = this.grid.container.x+', '+this.grid.container.y;
 		}
 		
 		/* Get colour values dependent on pattern id */

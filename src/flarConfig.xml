@@ -15,7 +15,7 @@
 	<!-- miscellaneous FLARManager settings -->
 	<flarManagerSettings
 		mirrorDisplay="true"
-		smoothing="6">
+		smoothing="3">
 		<smoother className="FLARMatrixSmoother_Average" />
 		<thresholdAdapter className="DrunkWalkThresholdAdapter" speed="0.3" bias="-0.1" />
 	</flarManagerSettings>
@@ -26,9 +26,9 @@
 	<!-- list of file paths of patterns for FLARToolkit to detect. -->
 	<!-- @resolution specifies the resolution at which the patterns were generated. -->
 	<patterns resolution="8" patternToBorderRatio="0.5" minConfidence="0.5">
-		<!--<pattern path="patt001.pat" />-->
-		<!--<pattern path="patt002.pat" />-->
-		<!--<pattern path="patt003.pat" />-->
+		<pattern path="patt001.pat" />
+		<pattern path="patt002.pat" />
+		<pattern path="patt003.pat" />
 		<pattern path="patt004.pat" />
 		<!--<pattern path="marker4_16_50.pat" />-->
 		<!--<pattern path="patt005.pat" />-->
