@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<actionScriptProperties mainApplicationPath="PEST.as" projectUUID="ec3215b5-008e-4d3f-814b-f59b6ea5f63d" version="6">
+<actionScriptProperties mainApplicationPath="ARGame.as" projectUUID="ec3215b5-008e-4d3f-814b-f59b6ea5f63d" version="6">
   <compiler additionalCompilerArguments="-locale en_US -use-network=false" autoRSLOrdering="true" copyDependentFiles="true" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
     <compilerSourcePath/>
     <libraryPath defaultLinkType="0">
@@ -28,7 +28,7 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="PEST.as"/>
+    <application path="ARGame.as"/>
   </applications>
   <modules/>
   <buildCSSFiles/>
