@@ -2,6 +2,7 @@ package {
 	/* Tweener Class [http://code.google.com/p/tweener/] */
 	import caurina.transitions.Tweener;
 	
+	import com.argame.grid.ARGameGrid;
 	import com.transmote.flar.FLARManager;
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.marker.FLARMarkerEvent;
@@ -13,6 +14,7 @@ package {
 	import flash.filters.GlowFilter;
 	import flash.geom.Point;
 	import flash.text.TextField;
+	import flash.text.TextFormat;
 	import flash.utils.Dictionary;
 	
 	import org.libspark.flartoolkit.support.pv3d.FLARCamera3D;
@@ -44,8 +46,8 @@ package {
 		/* Initialise glow filter to add a white border around selected objects in our scene */
 		private var glow:GlowFilter = new GlowFilter(0xFFFFFF, 1, 7, 7, 30, 1, false, false);
 		
-		/* Reference to game grid */
-		private var grid:Object;
+		/* ARGame Grid pointer */
+		private var grid:ARGameGrid;
 		
 		/* Vector storing references to all markers on screen, grouped by pattern id */
 		private var markersByPatternId:Vector.<Vector.<FLARMarker>>;
@@ -135,47 +137,37 @@ package {
 		}
 		
 		/* Add grid to the system */
-		private function addGrid(marker:FLARMarker):void {
+		private function addGrid(marker:FLARMarker):void {		
 			/* Grid details */
 			var gridWidth:int = 150;
 			var gridHeight:int = 150;
 			
-			/* Prepare material to be used by the Papervision cube based on pattern id */
-			var flatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(marker.patternId), getColorByPatternId(marker.patternId, true));
-			/* Add material to all sides of the cube */
-			var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat});
+			/* Initialise grid object */
+			this.grid = new ARGameGrid(0, 0, gridWidth, gridHeight, 5, 5);
+			this.grid.marker = marker;
 			
 			/* Initialise the grid container object */
 			var container:DisplayObject3D = new DisplayObject3D();
 			
-			/* Create grid */
-			var grid:Cube = new Cube(cubeMaterials, gridWidth, 0, gridHeight);
-			grid.visible = false;
-			container.addChild(grid);
+			this.grid.container = container;
 			
-			//var gridPos:Point = new Point(grid.x-(gridWidth/2), grid.y-(gridHeight/2));
-			var segColCount:int = 5;
-			var segRowCount:int = segColCount;
-			var segWidth:int = gridWidth/5;
-			var segHeight:int = gridHeight/5;			
-			for (var i:int = 1; i <= segRowCount; i++) {
-				for (var j:int = 1; j <= segColCount; j++) {
+			/* Create grid */
+			var segWidth:int = this.grid.width/5;
+			var segHeight:int = this.grid.height/5;			
+			for (var i:int = 1; i <= this.grid.segRowCount; i++) {
+				for (var j:int = 1; j <= this.grid.segColCount; j++) {
 					var colour:Number = Math.random()*0xFFFFFF;
 					var gridSegFlatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, colour, colour);
 					var gridSegMaterials:MaterialsList = new MaterialsList({all: gridSegFlatShaderMat});
 					var gridSeg:Cube = new Cube(gridSegMaterials, segWidth, 0, segHeight);
-					gridSeg.x = (j-0.5)*(gridWidth/segColCount)-(gridWidth/2);
-					gridSeg.y = (i-0.5)*(gridHeight/segRowCount)-(gridHeight/2);
-					gridSeg.z = grid.z;
+					gridSeg.x = (j-0.5)*(this.grid.width/this.grid.segColCount)-(this.grid.width/2);
+					gridSeg.y = (i-0.5)*(this.grid.height/this.grid.segRowCount)-(this.grid.height/2);
 					container.addChild(gridSeg);
 				}
 			}
 			
 			/* Add grid container to the Papervision scene */
 			this.scene3D.addChild(container);
-			
-			/* Add grid to class variable */
-			this.grid = {'container': container, 'marker': marker, 'active': true};
 		}
 		
 		/* Grid marker removed */
@@ -304,6 +296,10 @@ package {
 		/* Update grid method */
 		private function updateGrid():void {
 			if (this.grid && this.grid.active) {
+				/* Update grid postion variables */
+				this.grid.x = this.grid.container.x;
+				this.grid.y = this.grid.container.y;
+				
 				/* Transform container to new position in 3d space */
 				this.grid.container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(this.grid.marker.transformMatrix);
 			}
@@ -372,11 +368,16 @@ package {
 				this.debugOutput.height = 100;
 				this.debugOutput.textColor = 0xFF0000;
 				
+				var format:TextFormat = new TextFormat();
+				format.size = 26;
+				
+				this.debugOutput.defaultTextFormat = format;
+				
 				this.addChild(this.debugOutput);
 			}
 			
 			if (this.grid)
-				this.debugOutput.text = this.grid.container.x+', '+this.grid.container.y;
+				this.debugOutput.text = 'Grid x: '+Math.round(this.grid.x)+'\nGrid y: '+Math.round(this.grid.y);
 		}
 		
 		/* Get colour values dependent on pattern id */
