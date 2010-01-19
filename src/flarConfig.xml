@@ -10,7 +10,7 @@
 		displayWidth="640"
 		displayHeight="480"
 		framerate="25"
-		downsampleRatio="1" />
+		downsampleRatio="0.8" />
 
 	<!-- miscellaneous FLARManager settings -->
 	<flarManagerSettings
@@ -25,7 +25,7 @@
 	
 	<!-- list of file paths of patterns for FLARToolkit to detect. -->
 	<!-- @resolution specifies the resolution at which the patterns were generated. -->
-	<patterns resolution="8" patternToBorderRatio="0.5" minConfidence="0.5">
+	<patterns resolution="8" patternToBorderRatio="0.5" minConfidence="0.6">
 		<pattern path="patt001.pat" />
 		<pattern path="patt002.pat" />
 		<pattern path="patt003.pat" />
