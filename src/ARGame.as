@@ -21,7 +21,6 @@ package {
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.events.InteractiveScene3DEvent;
 	import org.papervision3d.lights.PointLight3D;
-	import org.papervision3d.materials.BitmapFileMaterial;
 	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.materials.shadematerials.FlatShadeMaterial;
 	import org.papervision3d.materials.utils.MaterialsList;
@@ -298,8 +297,8 @@ package {
 			container.autoCalcScreenCoords = true;
 			
 			/* Add marker container to the Papervision scene */
-			//this.scene3D.addChild(container);
-			this.grid.container.addChild(container);
+			this.scene3D.addChild(container);
+			//this.grid.container.addChild(container);
 			
 			/* Add marker container to containersByMarker Dictionary object */
 			this.containersByMarker[marker] = container;
@@ -322,8 +321,8 @@ package {
 			/* If a container exists */
 			if (container) {
 				/* Remove container from the Papervision scene */
-				//this.scene3D.removeChild(container);
-				this.grid.container.removeChild(container);
+				this.scene3D.removeChild(container);
+				//this.grid.container.removeChild(container);
 			}
 			/* Remove container reference from containersByMarker Dictionary object */
 			delete this.containersByMarker[marker];
@@ -444,11 +443,12 @@ package {
 					/* Transform container to new position in 3d space */
 					container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
 					
-					container.x = 0;
-					container.y = 0;
-					container.z = 0;
-					
-					var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(container.screen.x, container.screen.y), this.grid.plane);
+					//container.x = 0;
+					//container.y = 0;
+					//container.z = 0;
+
+					//var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(marker.centerpoint.x, marker.centerpoint.y), this.grid.plane);
+					var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(marker.centerpoint.x-(stage.stageWidth/2), marker.centerpoint.y-(stage.stageHeight/2)), this.grid.plane);
 					if (rhd.hasHit) {
 						/* Convert to use ARGameGrid calcGridReference method */ 
 						var gridX:Number = Math.floor((Math.floor(rhd.u*10)/10)*this.grid.segColCount)+1;
@@ -457,7 +457,7 @@ package {
 						//trace("Grid pos: "+gridX+", "+gridY);
 						
 						//this.grid.drawMarkerOnGridmap(Math.floor(rhd.u*10)/10, Math.floor(rhd.v*10)/10);
-						//this.grid.drawMarkerOnGridmap(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
+						this.grid.drawMarkerOnGridmap(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
 					}
 					//trace(Math.round(container.x)+', '+Math.round(container.y));
 					//trace(grid.calcGridReference(container.x, container.y));
