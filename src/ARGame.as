@@ -165,8 +165,6 @@ package {
 			gridMaterial.doubleSided = true;
 			
 			var grid:Plane = new Plane(gridMaterial, gridWidth, gridHeight, 4, 4);
-			grid.alpha = 0.6;
-			
 			grid.addEventListener(InteractiveScene3DEvent.OBJECT_PRESS, this.clickGrid);
 			
 			this.grid.plane = grid;
@@ -193,12 +191,9 @@ package {
 			
 			/* Add grid container to the Papervision scene */
 			this.scene3D.addChild(container);
-			
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, this.moveGridEvent);
 		}
 		
 		private function clickGrid(event:InteractiveScene3DEvent):void {			
-			//trace("Click");
 			var rhd:RenderHitData = this.viewport3D.hitTestMouse();
 			//trace("[eX: "+event.x+", eY: "+event.y+"], [rhdX: "+rhd.x+", rhdY: "+rhd.y+"], [u: "+rhd.u+", v:"+rhd.v+"]");
 			var eventXCalc:Number = event.x-0.5;
@@ -213,39 +208,6 @@ package {
 			this.grid.container.addChild(node);
 			
 			this.grid.drawMarkerOnGridmap(Math.round(event.x*100)/100, Math.round(event.y*100)/100);
-		}								 
-		
-		private function moveGridEvent(event:KeyboardEvent):void {
-			//trace(event.keyCode);
-			switch (event.keyCode) {
-				/* Space */
-				case 32:
-					trace(this.grid.plane);
-					var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(0, 0), this.grid.plane);
-					trace("[x: "+rhd.x+", y: "+rhd.y+"], [u: "+rhd.u+", v:"+rhd.v+"]");
-					var shape:Shape = new Shape();
-					shape.graphics.beginFill(0xFF0000);
-					shape.graphics.drawCircle(stage.stageWidth/2, stage.stageHeight/2, 5);
-					this.addChild(shape);
-					//trace(this.grid.container.rotationX+", "+this.grid.container.rotationY+", "+this.grid.container.rotationZ);
-					break;
-				/* Left */
-				case 37:
-					this.grid.container.x -= 10;
-					break;
-				/* Up */
-				case 38:
-					this.grid.container.y += 10;
-					break;
-				/* Right */
-				case 39:
-					this.grid.container.x += 10;
-					break;
-				/* Down */
-				case 40:
-					this.grid.container.y -= 10;
-					break;
-			}
 		}
 		
 		/* Grid marker removed */
@@ -288,17 +250,9 @@ package {
 			/* Add finished cube object to marker container */
 			container.addChild(cube);
 			
-			//flatShaderMat.doubleSided = true;
-			//var plane:Plane = new Plane(flatShaderMat, 5, 5);
-			//plane.z += 10;
-			//container.addChild(plane);
-			
-			/* Set container to calculate 2D position for grid */
-			container.autoCalcScreenCoords = true;
-			
 			/* Add marker container to the Papervision scene */
-			this.scene3D.addChild(container);
-			//this.grid.container.addChild(container);
+			//this.scene3D.addChild(container);
+			this.grid.container.addChild(container);
 			
 			/* Add marker container to containersByMarker Dictionary object */
 			this.containersByMarker[marker] = container;
@@ -321,8 +275,8 @@ package {
 			/* If a container exists */
 			if (container) {
 				/* Remove container from the Papervision scene */
-				this.scene3D.removeChild(container);
-				//this.grid.container.removeChild(container);
+				//this.scene3D.removeChild(container);
+				this.grid.container.removeChild(container);
 			}
 			/* Remove container reference from containersByMarker Dictionary object */
 			delete this.containersByMarker[marker];
@@ -441,20 +395,23 @@ package {
 					/* Find reference to marker container in containersByMarker Dictionary object */
 					container = this.containersByMarker[marker];
 					/* Transform container to new position in 3d space */
-					container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
-					
-					//container.x = 0;
-					//container.y = 0;
-					//container.z = 0;
+					//container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
 
 					//var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(marker.centerpoint.x, marker.centerpoint.y), this.grid.plane);
 					var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(marker.centerpoint.x-(stage.stageWidth/2), marker.centerpoint.y-(stage.stageHeight/2)), this.grid.plane);
-					if (rhd.hasHit) {
+					if (rhd.hasHit) {					
 						/* Convert to use ARGameGrid calcGridReference method */ 
 						var gridX:Number = Math.floor((Math.floor(rhd.u*10)/10)*this.grid.segColCount)+1;
 						var gridY:Number = Math.floor((Math.floor(rhd.v*10)/10)*this.grid.segRowCount)+1;
+
 						//trace("[x: "+Math.round(rhd.x)+", y: "+Math.round(rhd.y)+"], [u: "+rhd.u+", v:"+rhd.v+"]");
 						//trace("Grid pos: "+gridX+", "+gridY);
+						
+						container.x = (rhd.u-0.5)*this.grid.width;
+						container.y = ((rhd.v-0.5)*this.grid.height)*-1;
+						container.z = 0;
+						
+						//trace("CubeX: "+container.x+", CubeY: "+container.y+" CalcX: "+(rhd.u-0.5)*this.grid.width+", CalcY: "+((rhd.v-0.5)*this.grid.height)*-1);
 						
 						//this.grid.drawMarkerOnGridmap(Math.floor(rhd.u*10)/10, Math.floor(rhd.v*10)/10);
 						this.grid.drawMarkerOnGridmap(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
