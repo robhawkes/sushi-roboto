@@ -17,7 +17,19 @@
 		mirrorDisplay="true"
 		smoothing="3">
 		<smoother className="FLARMatrixSmoother_Average" />
-		<thresholdAdapter className="DrunkWalkThresholdAdapter" speed="0.3" bias="-0.1" />
+		<!--
+		# Threshold speed ####################################################
+		The speed at which the threshold changes during adaptive thresholding.
+		Larger values may increase the speed at which the markers in uneven 
+		illumination are detected, but may also result in instability in 
+		marker detection.
+		
+		# Threshold bias #####################################################
+		he direction toward which adaptive thresholding trends. Lower thresholds
+		favor environments with too little light; higher thresholds favor
+		environments with too much light.
+		-->
+		<thresholdAdapter className="DrunkWalkThresholdAdapter" speed="0.2" bias="0" />
 	</flarManagerSettings>
 	
 	<!-- location of camera parameters file, e.g. FLARCameraParams.dat or camera_para.dat. -->

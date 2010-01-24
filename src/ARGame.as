@@ -1,5 +1,7 @@
 package {
 	/* Tweener Class [http://code.google.com/p/tweener/] */
+	import caurina.transitions.Tweener;
+	
 	import com.argame.grid.ARGameGrid;
 	import com.transmote.flar.FLARManager;
 	import com.transmote.flar.marker.FLARMarker;
@@ -19,8 +21,12 @@ package {
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.events.InteractiveScene3DEvent;
 	import org.papervision3d.lights.PointLight3D;
+	import org.papervision3d.materials.BitmapFileMaterial;
+	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.materials.shadematerials.FlatShadeMaterial;
+	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.DisplayObject3D;
+	import org.papervision3d.objects.primitives.Cube;
 	import org.papervision3d.objects.primitives.Plane;
 	import org.papervision3d.render.LazyRenderEngine;
 	import org.papervision3d.scenes.Scene3D;
@@ -154,11 +160,13 @@ package {
 			this.grid.container = container;
 			
 			var colour:Number = Math.random()*0xFFFFFF;
-			var gridFlatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, colour, colour);
-			gridFlatShaderMat.interactive = true;
-			gridFlatShaderMat.doubleSided = true;
+			var gridMaterial:ColorMaterial = new ColorMaterial(colour, 0.6);
+			//var gridMaterial:BitmapFileMaterial = new BitmapFileMaterial("resources/Grid-Texture.png");
+			gridMaterial.interactive = true;
+			gridMaterial.doubleSided = true;
 			
-			var grid:Plane = new Plane(gridFlatShaderMat, gridWidth, gridHeight);
+			var grid:Plane = new Plane(gridMaterial, gridWidth, gridHeight, 4, 4);
+			grid.alpha = 0.6;
 			
 			grid.addEventListener(InteractiveScene3DEvent.OBJECT_PRESS, this.clickGrid);
 			
@@ -193,7 +201,19 @@ package {
 		private function clickGrid(event:InteractiveScene3DEvent):void {			
 			//trace("Click");
 			var rhd:RenderHitData = this.viewport3D.hitTestMouse();
-			trace("[x: "+rhd.x+", y: "+rhd.y+"], [u: "+rhd.u+", v:"+rhd.v+"]");
+			//trace("[eX: "+event.x+", eY: "+event.y+"], [rhdX: "+rhd.x+", rhdY: "+rhd.y+"], [u: "+rhd.u+", v:"+rhd.v+"]");
+			var eventXCalc:Number = event.x-0.5;
+			var eventYCalc:Number = event.y-0.5;
+			trace("[eX: "+event.x+", eY: "+event.y+"], [eX-0.5: "+eventXCalc+", eY-0.5: "+eventYCalc+"]");
+				
+			var planeMat:ColorMaterial = new ColorMaterial(0xFF0000);
+			planeMat.doubleSided = true;
+			var node:Plane = new Plane(planeMat, 5, 5);
+			node.x = (event.x-0.5)*this.grid.width;
+			node.y = ((event.y-0.5)*this.grid.height)*-1;
+			this.grid.container.addChild(node);
+			
+			this.grid.drawMarkerOnGridmap(Math.round(event.x*100)/100, Math.round(event.y*100)/100);
 		}								 
 		
 		private function moveGridEvent(event:KeyboardEvent):void {
@@ -248,37 +268,38 @@ package {
 			var flatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(marker.patternId), getColorByPatternId(marker.patternId, true));
 			
 			/* Add material to all sides of the cube */
-			//var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat});
+			var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat});
 			
 			/* Initialise the cube with material and set dimensions of all sides to 40 */
-			//var cube:Cube = new Cube(cubeMaterials, 20, 20, 20);
+			var cube:Cube = new Cube(cubeMaterials, 20, 20, 20);
 			
 			/* Shift cube upwards so it sits on top of paper instead of being cut half-way */
-			//cube.z = 0.5 * 20;
+			cube.z = 0.5 * 20;
 			
 			/* Scale cube to 0 so it's invisible */
-			//cube.scale = 0;
+			cube.scale = 0;
 			/* Add animation which scales cube to full size */
-			//Tweener.addTween(cube, {scale: 1, time:0.5, transition:"easeInOutExpo"});
+			Tweener.addTween(cube, {scale: 1, time:0.5, transition:"easeInOutExpo"});
 			
 			/* Set cube to be individually affected by filters */
-			//cube.useOwnContainer = true;
+			cube.useOwnContainer = true;
 			/* Add cellshaded border using glow filter */
-			//cube.filters = [this.glow];
+			cube.filters = [this.glow];
 			
 			/* Add finished cube object to marker container */
-			//container.addChild(cube);
+			container.addChild(cube);
 			
-			flatShaderMat.doubleSided = true;
-			var plane:Plane = new Plane(flatShaderMat, 5, 5);
-			plane.z += 10;
-			container.addChild(plane);
+			//flatShaderMat.doubleSided = true;
+			//var plane:Plane = new Plane(flatShaderMat, 5, 5);
+			//plane.z += 10;
+			//container.addChild(plane);
 			
 			/* Set container to calculate 2D position for grid */
 			container.autoCalcScreenCoords = true;
 			
 			/* Add marker container to the Papervision scene */
-			this.scene3D.addChild(container);
+			//this.scene3D.addChild(container);
+			this.grid.container.addChild(container);
 			
 			/* Add marker container to containersByMarker Dictionary object */
 			this.containersByMarker[marker] = container;
@@ -301,7 +322,8 @@ package {
 			/* If a container exists */
 			if (container) {
 				/* Remove container from the Papervision scene */
-				this.scene3D.removeChild(container);
+				//this.scene3D.removeChild(container);
+				this.grid.container.removeChild(container);
 			}
 			/* Remove container reference from containersByMarker Dictionary object */
 			delete this.containersByMarker[marker];
@@ -422,6 +444,10 @@ package {
 					/* Transform container to new position in 3d space */
 					container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
 					
+					container.x = 0;
+					container.y = 0;
+					container.z = 0;
+					
 					var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(container.screen.x, container.screen.y), this.grid.plane);
 					if (rhd.hasHit) {
 						/* Convert to use ARGameGrid calcGridReference method */ 
@@ -431,7 +457,7 @@ package {
 						//trace("Grid pos: "+gridX+", "+gridY);
 						
 						//this.grid.drawMarkerOnGridmap(Math.floor(rhd.u*10)/10, Math.floor(rhd.v*10)/10);
-						this.grid.drawMarkerOnGridmap(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
+						//this.grid.drawMarkerOnGridmap(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
 					}
 					//trace(Math.round(container.x)+', '+Math.round(container.y));
 					//trace(grid.calcGridReference(container.x, container.y));
