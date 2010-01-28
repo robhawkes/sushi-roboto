@@ -1,4 +1,4 @@
-package com.argame.grid
+package argame.grid
 {
 	import com.transmote.flar.marker.FLARMarker;
 	

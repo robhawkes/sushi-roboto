@@ -1,8 +1,6 @@
 package {
-	/* Tweener Class [http://code.google.com/p/tweener/] */
-	import caurina.transitions.Tweener;
+	import argame.grid.ARGameGrid;
 	
-	import com.argame.grid.ARGameGrid;
 	import com.transmote.flar.FLARManager;
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.marker.FLARMarkerEvent;
