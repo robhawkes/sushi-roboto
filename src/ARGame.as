@@ -11,20 +11,23 @@ package {
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
-	import flash.events.KeyboardEvent;
 	import flash.filters.GlowFilter;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.utils.Dictionary;
 	
 	import org.libspark.flartoolkit.support.pv3d.FLARCamera3D;
+	import org.papervision3d.core.math.Matrix3D;
+	import org.papervision3d.core.math.Number3D;
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.events.InteractiveScene3DEvent;
 	import org.papervision3d.lights.PointLight3D;
+	import org.papervision3d.materials.BitmapFileMaterial;
 	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.materials.shadematerials.FlatShadeMaterial;
 	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.DisplayObject3D;
+	import org.papervision3d.objects.parsers.Collada;
 	import org.papervision3d.objects.primitives.Cube;
 	import org.papervision3d.objects.primitives.Plane;
 	import org.papervision3d.render.LazyRenderEngine;
@@ -227,9 +230,13 @@ package {
 			
 			/* Prepare material to be used by the Papervision cube based on pattern id */
 			var flatShaderMat:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(marker.patternId), getColorByPatternId(marker.patternId, true));
+			var flatShaderMat0:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(0), getColorByPatternId(0, true));
+			var flatShaderMat1:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(5), getColorByPatternId(5, true));
+			var flatShaderMat2:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(2), getColorByPatternId(2, true));
+			var flatShaderMat3:FlatShadeMaterial = new FlatShadeMaterial(pointLight3D, getColorByPatternId(3), getColorByPatternId(3, true));
 			
 			/* Add material to all sides of the cube */
-			var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat});
+			var cubeMaterials:MaterialsList = new MaterialsList({all: flatShaderMat, top: flatShaderMat0, bottom: flatShaderMat1, left: flatShaderMat2, right: flatShaderMat3});
 			
 			/* Initialise the cube with material and set dimensions of all sides to 40 */
 			var cube:Cube = new Cube(cubeMaterials, 20, 20, 20);
@@ -249,6 +256,17 @@ package {
 			
 			/* Add finished cube object to marker container */
 			container.addChild(cube);
+			
+			/* Work out why materials aren't loading on Collada model */
+			var modelMaterial:BitmapFileMaterial = new BitmapFileMaterial("resources/Brick/texture0.jpg");
+			modelMaterial.tiled = true;
+			var modelMaterials:MaterialsList = new MaterialsList({all: modelMaterial});
+			var model:Collada = new Collada("resources/Brick.dae", modelMaterials);
+			
+			model.scale = 0.01;
+			model.rotationX = -90;
+			model.rotationY = -180;
+			//container.addChild(model);
 			
 			/* Add marker container to the Papervision scene */
 			//this.scene3D.addChild(container);
@@ -396,6 +414,28 @@ package {
 					container = this.containersByMarker[marker];
 					/* Transform container to new position in 3d space */
 					//container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
+					
+					/* 
+					 * Bit innacurate, could possibly subtract marker transformation from grid transformation
+					 * instead of working out two calculations
+					 */
+					var gridRotation:Number3D = Matrix3D.matrix2euler(this.grid.container.transform);
+					var markerRotation:Number3D = Matrix3D.matrix2euler(FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix));
+					var containerRotation:Number = (markerRotation.z-gridRotation.z)*-1;
+					
+					if (containerRotation >= -46 && containerRotation <= 45) {
+						trace(0);
+						container.rotationZ = 0;
+					} else if (containerRotation >= 46 && containerRotation <= 135) {
+						trace(90);
+						container.rotationZ = 90;
+					} else if ((containerRotation >= 136 && containerRotation <= 180) || (containerRotation >= -180 && containerRotation <= -135)) {
+						trace(180);
+						container.rotationZ = 180;
+					} else if (containerRotation >= -134 && containerRotation <= -45) {
+						trace(-90);
+						container.rotationZ = -90;
+					}
 
 					//var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(marker.centerpoint.x, marker.centerpoint.y), this.grid.plane);
 					var rhd:RenderHitData = this.viewport3D.hitTestPointObject(new Point(marker.centerpoint.x-(stage.stageWidth/2), marker.centerpoint.y-(stage.stageHeight/2)), this.grid.plane);
@@ -427,28 +467,28 @@ package {
 			switch (patternId) {
 				case 0:
 					if (!shaded)
-						return 0xFF1919;
+						return 0xFF1919; // Red
 					return 0x730000;
 				case 1:
 					if (!shaded)
-						return 0xFF19E8;
-					return 0x730067;
+						return 0x00FF00; // Green
+					return 0x02bf02;
 				case 2:
 					if (!shaded)
-						return 0x9E19FF;
+						return 0x9E19FF; // Purple
 					return 0x420073;
 				case 3:
 					if (!shaded)
-						return 0x192EFF;
-					return 0x000A73;
+						return 0x1996FF; // Blue
+					return 0x003E73;
 				case 4:
 					if (!shaded)
-						return 0x1996FF;
-					return 0x003E73;
+						return 0xff19e7; // Pink
+					return 0xc501b1;
 				case 5:
 					if (!shaded)
-						return 0x19FDFF;
-					return 0x007273;
+						return 0xffec19; // Yellow
+					return 0xd2c102;
 				default:
 					if (!shaded)
 						return 0xCCCCCC;
