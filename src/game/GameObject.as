@@ -5,7 +5,7 @@ package game {
 		protected var interactive:Boolean = false;
 		
 		public function GameObject() {
-			
+			super();
 		}
 		
 		public function update():void {

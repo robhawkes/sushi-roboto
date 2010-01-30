@@ -1,75 +1,72 @@
-package game {
-	import com.transmote.flar.marker.FLARMarker;
-	
-	import flash.display.Shape;
-	import flash.display.Sprite;
+package game {	
 	import flash.geom.Point;
 	
+	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.objects.DisplayObject3D;
 	import org.papervision3d.objects.primitives.Plane;
-	
-	public class GameGrid extends Object {
+
+	public class GameGrid {
 		/* Dimensions */
-		public var width:int;
-		public var height:int;
+		private var _width:int;
+		private var _height:int;
 		
-		/* Position */
-		public var oriX:Number;
-		public var oriY:Number;
-		public var x:Number;
-		public var y:Number;
-		public var active:Boolean;
+		/* Segmentation */
+		private var _rows:int;
+		private var _columns:int;
 		
-		/* Segments */
-		public var segColCount:int;
-		public var segRowCount:int;
-		public var segWidth:int;
-		public var segHeight:int;
+		/* Papervision 3D object */
+		private var _container:DisplayObject3D;
+		private var _grid3DObject:DisplayObject3D;
 		
-		/* Augmented Reality */
-		public var marker:FLARMarker;
-		public var container:DisplayObject3D;
-		public var plane:Plane;
-		
-		/* Grid map */
-		private var gridMap:Sprite;
-		private var gridMapMarker:Sprite;
-		
-		public function GameGrid(oriX:Number = 0, oriY:Number = 0, width:int = 100, height:int = 100, segColCount:int = 5, segRowCount:int = 0) {
-			/* Run parent constructor */ 
-			super();
+		public function GameGrid(width:int = 100, height:int = 100, rows:int = 5, columns:int = 5) {
+			this._width = width;
+			this._height = height;
+			this._rows = rows;
+			this._columns = columns;
 			
-			/* Set grid dimensions */
-			this.width = width;
-			this.height = height;
-			
-			/* Set grid position */
-			this.updatePosition(oriX, oriY);
-			this.active = true;
-			
-			/* Set grid segments */
-			this.segColCount = segColCount;
-			this.segRowCount = segRowCount;
+			this._initGrid3D();
 		}
 		
-		public function updatePosition(oriX:Number, oriY:Number):void {
-			this.oriX = oriX;
-			this.oriY = oriY;
-			this.x = this.oriX-(this.width/2);
-			this.y = this.oriY-(this.height/2);
+		private function _initGrid3D():void {
+			this._container = new DisplayObject3D();
+			
+			var material:ColorMaterial = new ColorMaterial(0xFF0000);
+			material.doubleSided = true;
+			material.interactive = true;
+			
+			this._grid3DObject = new Plane(material, this._width, this._height, 4, 4);
+			
+			this._container.addChild(this._grid3DObject);
 		}
 		
-		public function calcGridReference(x:Number, y:Number):Point {
+		public function coordToGridReference(x:int, y:int):Point {
 			var gridReference:Point = new Point();
-			
-			gridReference.x = Math.floor((x/(this.width/this.segColCount))+1);
-			gridReference.y = Math.floor((y/(this.height/this.segRowCount))+1);
+			gridReference.x = Math.floor((x/(this._width/this._columns))+1);
+			gridReference.y = Math.floor((y/(this._height/this._rows))+1);
 			
 			return gridReference;
 		}
 		
-		public function getGridMap():Sprite {
-			return this.gridMap;
+		public function gridReferenceToCoord(x:int, y:int):Point {
+			var coord:Point = new Point();
+			
+			return coord;
+		}
+		
+		public function get width():int {
+			return this._width;
+		}
+		
+		public function get height():int {
+			return this._height;
+		}
+		
+		public function get container():DisplayObject3D {
+			return this._container;
+		}
+		
+		public function get grid3DObject():DisplayObject3D {
+			return this._grid3DObject;
 		}
 	}
 }
