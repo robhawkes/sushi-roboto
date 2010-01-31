@@ -5,6 +5,7 @@ package {
 	
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
 	
 	import game.GameBoard;
 	import game.GameLevelData;
@@ -51,6 +52,9 @@ package {
 			
 			/* Initialise augmented reality */
 			this._initFLAR();
+			
+			/* Initialise keyboard listeners */
+			this._initKeyboardListeners();
 		}
 		
 		/* Game level data initialisation */
@@ -87,6 +91,11 @@ package {
 			
 			/* Event listener for when the FLARManager object has loaded */
 			this._flarManager.addEventListener(Event.INIT, this._onFlarManagerLoad);
+		}
+		
+		/* Keyboard listeners initialisation */
+		private function _initKeyboardListeners():void {
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, this._onKeyDown);
 		}
 		
 		/* Run if FLARManager object has loaded */
@@ -187,6 +196,28 @@ package {
 						this._board.updateActiveObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
 						break;
 				}
+			}
+		}
+		
+		/* Keyboard listeners */
+		private function _onKeyDown(e:KeyboardEvent):void {
+			switch (e.keyCode) {
+				case 38: // Up arrow
+					trace("Up");
+					this._board.character.moveUp();
+					break;
+				case 40: // Down arrow
+					trace("Down");
+					this._board.character.moveDown();
+					break;
+				case 37: // Left arrow
+					trace("Left");
+					this._board.character.moveLeft();
+					break;
+				case 39: // Right arrow
+					trace("Right");
+					this._board.character.moveRight();
+					break;
 			}
 		}
 	}

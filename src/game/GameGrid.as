@@ -49,6 +49,8 @@ package game {
 		
 		public function gridReferenceToCoord(x:int, y:int):Point {
 			var coord:Point = new Point();
+			coord.x = ((x-0.5)*(this._width/this._columns))-(this._width/2);
+			coord.y = (((y-0.5)*(this._height/this._rows))-(this._height/2))*-1;
 			
 			return coord;
 		}

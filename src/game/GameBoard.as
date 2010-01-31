@@ -10,9 +10,11 @@ package game {
 
 	public class GameBoard {
 		private var _activeObjectId:int = -1;
+		private var _character:GameCharacter;
 		private var _container:DisplayObject3D;
 		private var _containersByObject:Dictionary;
 		private var _grid:GameGrid;
+		private var _levelData:GameLevelData;
 		private var _objects:Vector.<GameObject>;
 		private var _registry:GameRegistry; 
 		
@@ -24,15 +26,21 @@ package game {
 			this._containersByObject = new Dictionary(true);
 			this._objects = new Vector.<GameObject>();
 			
-			var levelData:GameLevelData = this._registry.getEntry("levelData");
-			if (levelData)
-				this._grid = new GameGrid(levelData.width, levelData.height, levelData.rows, levelData.columns);
+			this._levelData = this._registry.getEntry("levelData");
+			if (this._levelData)
+				this._grid = new GameGrid(this._levelData.width, this._levelData.height, this._levelData.rows, this._levelData.columns);
+			
+			this._character = new GameCharacter();
 			
 			this._populateBoard();
 		}
 		
 		private function _populateBoard():void {
 			this._container.addChild(this._grid.container);
+			
+			this._container.addChild(this._character.container);
+			var characterPosition:Point = this._grid.gridReferenceToCoord(1, 0);
+			this._character.moveToPoint(characterPosition.x, characterPosition.y);
 		}
 		
 		public function addDebugObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -58,24 +66,14 @@ package game {
 			
 			var rhd:RenderHitData = papervision.viewport.hitTestPointObject(new Point(marker.centerpoint.x-(stageWidth/2), marker.centerpoint.y-(stageHeight/2)), this._grid.grid3DObject);
 			if (rhd.hasHit) {					
-				//trace("Hit");
+				var gridRef:Point = this._grid.coordToGridReference(rhd.u*this._grid.width, rhd.v*this._grid.height);
+				var coord:Point = this._grid.gridReferenceToCoord(gridRef.x, gridRef.y);
 				
-				trace(this._grid.coordToGridReference(rhd.u*this._grid.width, rhd.v*this._grid.height))
+				//trace(gridRef);
+				//trace(coord);
 				
-				this._objects[this._activeObjectId].rotationZ += 5;
-				
-				// Convert to use ARGameGrid calcGridReference method */
-				//var gridX:Number = Math.floor((Math.floor(rhd.u*10)/10)*this.grid.segColCount)+1;
-				//var gridY:Number = Math.floor((Math.floor(rhd.v*10)/10)*this.grid.segRowCount)+1;
-				
-				//trace("[x: "+Math.round(rhd.x)+", y: "+Math.round(rhd.y)+"], [u: "+rhd.u+", v:"+rhd.v+"]");
-				//trace("Grid pos: "+gridX+", "+gridY);
-				
-				//container.x = (rhd.u-0.5)*this.grid.width;
-				//container.y = ((rhd.v-0.5)*this.grid.height)*-1;
-				//container.z = 0;
-				
-				//trace("CubeX: "+container.x+", CubeY: "+container.y+" CalcX: "+(rhd.u-0.5)*this.grid.width+", CalcY: "+((rhd.v-0.5)*this.grid.height)*-1);
+				this._objects[this._activeObjectId].x = coord.x;
+				this._objects[this._activeObjectId].y = coord.y;
 				
 				if (map)
 					map.updateMarker(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
@@ -99,6 +97,10 @@ package game {
 		
 		public function get container():DisplayObject3D {
 			return this._container;
+		}
+		
+		public function get character():GameCharacter {
+			return this._character;
 		}
 	}
 }
