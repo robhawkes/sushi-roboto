@@ -7,14 +7,18 @@ package game {
 	
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.objects.DisplayObject3D;
+	import org.papervision3d.view.layer.ViewportLayer;
+	import org.papervision3d.view.layer.util.ViewportLayerSortMode;
 
 	public class GameBoard {
 		private var _activeObjectId:int = -1;
+		private var _boardViewportLayer:ViewportLayer;
 		private var _character:GameCharacter;
 		private var _container:DisplayObject3D;
 		private var _containersByObject:Dictionary;
 		private var _grid:GameGrid;
 		private var _levelData:GameLevelData;
+		private var _objectViewportLayer:ViewportLayer;
 		private var _objects:Vector.<GameObject>;
 		private var _registry:GameRegistry; 
 		
@@ -35,6 +39,21 @@ package game {
 			this._populateBoard();
 		}
 		
+		public function initViewportLayers():void {
+			var papervision:GamePapervision = this._registry.getEntry("papervision");
+			if (papervision) {
+				trace("Setting up viewport layers");
+				
+				this._boardViewportLayer = papervision.viewport.getChildLayer(this._grid.container, true);
+				this._boardViewportLayer.sortMode = ViewportLayerSortMode.INDEX_SORT;
+
+				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
+				this._boardViewportLayer.addLayer(this._objectViewportLayer);
+				
+				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
+			}
+		}
+		
 		private function _populateBoard():void {
 			/* Add grid 3D object to board */
 			this._container.addChild(this._grid.container);
@@ -49,6 +68,7 @@ package game {
 			/* TODO: Convert mandatory method parameters into object of optional parameters */ 
 			if (this._activeObjectId < 0) {
 				var object:GameObject = new GameDebugObject();
+				this._objectViewportLayer.addDisplayObject3D(object, true);
 				
 				/* Add object to list and set _activeObjectId to object position in list */
 				this._activeObjectId = this._objects.push(object)-1;
@@ -81,7 +101,7 @@ package game {
 				this._objects[this._activeObjectId].y = coord.y;
 				
 				if (map)
-					map.updateMarker(Math.round(rhd.u*100)/100, Math.round(rhd.v*100)/100);
+					map.updateMarker(Math.round(rhd.u*100)/100, Math.round((rhd.v*-1+1)*100)/100);
 			} else {
 				if (map)
 					map.removeMarker();
