@@ -6,16 +6,16 @@ package game {
 	public class GameDebugObject extends GameObject {
 		public function GameDebugObject() {
 			super();
-			this.interactive = true;
-			this.initObject();
+			this._interactive = true;
+			this._initObject();
 		}
 		
-		private function initObject():void {
+		private function _initObject():void {
 			var material:ColorMaterial = new ColorMaterial(0x0000FF);
 			var materialsList:MaterialsList = new MaterialsList({all: material});
 			
 			var object:Cube = new Cube(materialsList, 20, 20, 20);
-			object.z += 0.5 * 20;
+			object.z -= 0.5 * 20;
 			
 			this.addChild(object);
 		}

@@ -53,7 +53,7 @@ package com.transmote.flar.source {
 	 * @see		com.transmote.flar.FLARManager
 	 */
 	public class FLARCameraSource extends Sprite implements IFLARSource {
-		private static const CAMERA_VALIDATION_TIME:Number = 3000;
+		private static const CAMERA_VALIDATION_TIME:Number = 5000; // Raised to 5000 (from 3000) to give webcam more time to display
 		private static const VALID_CAMERA_MIN_FRAME_DIFFERENCE:uint = 10;
 		
 		private var _resultsToDisplayRatio:Number;

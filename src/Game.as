@@ -6,6 +6,7 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Point;
 	
 	import game.GameBoard;
 	import game.GameLevelData;
@@ -93,6 +94,25 @@ package {
 			this._flarManager.addEventListener(Event.INIT, this._onFlarManagerLoad);
 		}
 		
+		/* Papervision initialisation method */
+		private function _initPapervision():void {
+			/* Initialise Papervision environment */
+			this._papervision = new GamePapervision();
+			this._papervision.setFLARCamera(this._flarManager.cameraParams);
+			
+			/* Add Papervision viewport to the main stage */
+			this.addChild(this._papervision.viewport);
+			
+			/* Add empty board containter to Papervision scene */
+			this._papervision.addChildToScene(this._board.container);
+			
+			/* Add Papervision object to registry */
+			this._registry.setEntry("papervision", this._papervision);
+			
+			/* Create event listner to run a method on each frame */
+			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+		}
+		
 		/* Keyboard listeners initialisation */
 		private function _initKeyboardListeners():void {
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, this._onKeyDown);
@@ -111,25 +131,6 @@ package {
 			
 			/* Initialise game map */
 			this._initMap();
-		}
-		
-		/* Papervision initialisation method */
-		private function _initPapervision():void {
-			/* Initialise Papervision environment */
-			this._papervision = new GamePapervision();
-			this._papervision.setFLARCamera(this._flarManager.cameraParams);
-			
-			/* Add Papervision viewport to the main stage */
-			this.addChild(this._papervision.viewport);
-			
-			/* Add empty board containter to Papervision scene */
-			this._papervision.addChildToScene(this._board.container);
-			
-			/* Add Papervision object to registry */
-			this._registry.setEntry("papervision", this._papervision);
-			
-			/* Create event listner to run a method on each frame */
-			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 		}
 		
 		/* Run when a new marker is recognised */
@@ -203,20 +204,23 @@ package {
 		private function _onKeyDown(e:KeyboardEvent):void {
 			switch (e.keyCode) {
 				case 38: // Up arrow
-					trace("Up");
-					this._board.character.moveUp();
+					trace("Forward");
+					var characterGridRef:Point = this._board.grid.worldCoordToGridReference(this._board.character.container.x, this._board.character.container.y);
+					var coord:Point = this._board.grid.gridReferenceToWorldCoord(characterGridRef.x, characterGridRef.y+1);
+					var distance:int = coord.y - this._board.character.container.y;
+					this._board.character.animateForward(distance);
 					break;
 				case 40: // Down arrow
-					trace("Down");
-					this._board.character.moveDown();
+					trace("Backward");
+					this._board.character.animateBackward(40);
 					break;
 				case 37: // Left arrow
 					trace("Left");
-					this._board.character.moveLeft();
+					this._board.character.animateLeft(40);
 					break;
 				case 39: // Right arrow
 					trace("Right");
-					this._board.character.moveRight();
+					this._board.character.animateRight(40);
 					break;
 			}
 		}

@@ -36,10 +36,12 @@ package game {
 		}
 		
 		private function _populateBoard():void {
+			/* Add grid 3D object to board */
 			this._container.addChild(this._grid.container);
 			
+			/* Add character to board */
 			this._container.addChild(this._character.container);
-			var characterPosition:Point = this._grid.gridReferenceToCoord(1, 0);
+			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
 			this._character.moveToPoint(characterPosition.x, characterPosition.y);
 		}
 		
@@ -58,6 +60,9 @@ package game {
 		public function updateBoard(marker:FLARMarker):void {
 			/* Transform board to new position in 3D space */
 			this._container.transform = FLARPVGeomUtils.convertFLARMatrixToPVMatrix(marker.transformMatrix);
+			
+			/* Change X rotation to correct angle */
+			this._container.pitch(180);
 		}
 		
 		public function updateActiveObject(marker:FLARMarker, stageWidth:int = 0, stageHeight:int = 0):void {
@@ -65,12 +70,12 @@ package game {
 			var map:GameMap = this._registry.getEntry("gameMap");
 			
 			var rhd:RenderHitData = papervision.viewport.hitTestPointObject(new Point(marker.centerpoint.x-(stageWidth/2), marker.centerpoint.y-(stageHeight/2)), this._grid.grid3DObject);
-			if (rhd.hasHit) {					
-				var gridRef:Point = this._grid.coordToGridReference(rhd.u*this._grid.width, rhd.v*this._grid.height);
-				var coord:Point = this._grid.gridReferenceToCoord(gridRef.x, gridRef.y);
+			if (rhd.hasHit) {
+				/* Reverse V to take reversed Y coordinates into concideration */ 
+				var gridRef:Point = this._grid.coordToGridReference(rhd.u*this._grid.width, (rhd.v*-1+1)*this._grid.height);
+				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
 				
-				//trace(gridRef);
-				//trace(coord);
+				trace(gridRef);
 				
 				this._objects[this._activeObjectId].x = coord.x;
 				this._objects[this._activeObjectId].y = coord.y;
@@ -95,12 +100,16 @@ package game {
 			}
 		}
 		
+		public function get character():GameCharacter {
+			return this._character;
+		}
+		
 		public function get container():DisplayObject3D {
 			return this._container;
 		}
 		
-		public function get character():GameCharacter {
-			return this._character;
+		public function get grid():GameGrid {
+			return this._grid;
 		}
 	}
 }

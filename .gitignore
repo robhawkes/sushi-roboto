@@ -1,2 +1,3 @@
 bin-release/
 bin-debug/
+src/*_BAK.as

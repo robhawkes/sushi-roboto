@@ -39,6 +39,22 @@ package game {
 			this._container.addChild(this._grid3DObject);
 		}
 		
+		private function _worldToGridCoord(x:int, y:int):Point {
+			var coord:Point = new Point();
+			coord.x = x+(this._width/2);
+			coord.y = y+(this._height/2);
+			
+			return coord;
+		}
+		
+		private function _gridToWorldCoord(x:int, y:int):Point {
+			var coord:Point = new Point();
+			coord.x = x-(this._width/2);
+			coord.y = y-(this._height/2);
+			
+			return coord;
+		}
+		
 		public function coordToGridReference(x:int, y:int):Point {
 			var gridReference:Point = new Point();
 			gridReference.x = Math.floor((x/(this._width/this._columns))+1);
@@ -47,12 +63,24 @@ package game {
 			return gridReference;
 		}
 		
-		public function gridReferenceToCoord(x:int, y:int):Point {
-			var coord:Point = new Point();
-			coord.x = ((x-0.5)*(this._width/this._columns))-(this._width/2);
-			coord.y = (((y-0.5)*(this._height/this._rows))-(this._height/2))*-1;
+		public function worldCoordToGridReference(x:int, y:int):Point {
+			var gridCoord:Point = this._worldToGridCoord(x, y);
 			
-			return coord;
+			var gridReference:Point = new Point();
+			gridReference.x = Math.floor((gridCoord.x/(this._width/this._columns))+1);
+			gridReference.y = Math.floor((gridCoord.y/(this._height/this._rows))+1);
+			
+			return gridReference;
+		}
+		
+		public function gridReferenceToWorldCoord(x:int, y:int):Point {
+			var coord:Point = new Point();
+			coord.x = ((x-0.5)*(this._width/this._columns));
+			coord.y = ((y-0.5)*(this._height/this._rows));
+			
+			var worldCoord:Point = this._gridToWorldCoord(coord.x, coord.y);
+			
+			return worldCoord;
 		}
 		
 		public function get width():int {
