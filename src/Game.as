@@ -109,8 +109,9 @@ package {
 			/* Add Papervision object to registry */
 			this._registry.setEntry("papervision", this._papervision);
 			
-			/* Initialise board viewport layers */
+			/* Initialise board viewport layers and populate board */
 			this._board.initViewportLayers();
+			this._board.populateBoard();
 			
 			/* Create event listner to run a method on each frame */
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);

@@ -1,6 +1,7 @@
 package game {	
 	import flash.geom.Point;
 	
+	import org.papervision3d.materials.BitmapFileMaterial;
 	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.objects.DisplayObject3D;
 	import org.papervision3d.objects.primitives.Plane;
@@ -28,11 +29,13 @@ package game {
 		}
 		
 		private function _initGrid3D():void {
-			this._container = new DisplayObject3D();
+			var containerMaterial:ColorMaterial = new ColorMaterial(0xFFFFFF, 0, true);
+			this._container = new Plane(containerMaterial, this._width, this._height, 4, 4);
 			
-			var material:ColorMaterial = new ColorMaterial(0xFF0000);
-			material.doubleSided = true;
-			material.interactive = true;
+			var material:BitmapFileMaterial = new BitmapFileMaterial("resources/Grid-Texture.png");
+			material.baked = true;
+			material.smooth = true;
+			material.precise = true;
 			
 			this._grid3DObject = new Plane(material, this._width, this._height, 4, 4);
 			
@@ -93,10 +96,6 @@ package game {
 		
 		public function get container():DisplayObject3D {
 			return this._container;
-		}
-		
-		public function get grid3DObject():DisplayObject3D {
-			return this._grid3DObject;
 		}
 	}
 }

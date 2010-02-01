@@ -35,8 +35,6 @@ package game {
 				this._grid = new GameGrid(this._levelData.width, this._levelData.height, this._levelData.rows, this._levelData.columns);
 			
 			this._character = new GameCharacter();
-			
-			this._populateBoard();
 		}
 		
 		public function initViewportLayers():void {
@@ -54,7 +52,7 @@ package game {
 			}
 		}
 		
-		private function _populateBoard():void {
+		public function populateBoard():void {
 			/* Add grid 3D object to board */
 			this._container.addChild(this._grid.container);
 			
@@ -62,6 +60,23 @@ package game {
 			this._container.addChild(this._character.container);
 			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
 			this._character.moveToPoint(characterPosition.x, characterPosition.y);
+			
+			/* Add level objects to board */
+			this._addLevelObjects();
+		}
+		
+		private function _addLevelObjects():void {
+			var wall:GameLevelWallObject = new GameLevelWallObject();
+			
+			var coord:Point = this._grid.gridReferenceToWorldCoord(1, 3);
+			wall.x = coord.x;
+			wall.y = coord.y;
+			
+			/* Add object to objects viewport layer */
+			this._objectViewportLayer.addDisplayObject3D(wall, true);
+			
+			this._objects.push(wall);
+			this._container.addChild(wall);
 		}
 		
 		public function addDebugObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -89,19 +104,20 @@ package game {
 			var papervision:GamePapervision = this._registry.getEntry("papervision");
 			var map:GameMap = this._registry.getEntry("gameMap");
 			
-			var rhd:RenderHitData = papervision.viewport.hitTestPointObject(new Point(marker.centerpoint.x-(stageWidth/2), marker.centerpoint.y-(stageHeight/2)), this._grid.grid3DObject);
+			var rhd:RenderHitData = papervision.viewport.hitTestPointObject(new Point(marker.centerpoint.x-(stageWidth/2), marker.centerpoint.y-(stageHeight/2)), this._grid.container);
 			if (rhd.hasHit) {
-				/* Reverse V to take reversed Y coordinates into concideration */ 
-				var gridRef:Point = this._grid.coordToGridReference(rhd.u*this._grid.width, (rhd.v*-1+1)*this._grid.height);
-				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
+				var u:Number = rhd.u;
+				var v:Number = rhd.v;
 				
-				trace(gridRef);
+				/* Reverse V to take reversed Y coordinates into concideration */ 
+				var gridRef:Point = this._grid.coordToGridReference(u*this._grid.width, (v*-1+1)*this._grid.height);
+				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
 				
 				this._objects[this._activeObjectId].x = coord.x;
 				this._objects[this._activeObjectId].y = coord.y;
 				
 				if (map)
-					map.updateMarker(Math.round(rhd.u*100)/100, Math.round((rhd.v*-1+1)*100)/100);
+					map.updateMarker(Math.round(u*100)/100, Math.round((v*-1+1)*100)/100);
 			} else {
 				if (map)
 					map.removeMarker();
