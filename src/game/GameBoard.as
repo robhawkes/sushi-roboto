@@ -18,8 +18,9 @@ package game {
 		private var _containersByObject:Dictionary;
 		private var _grid:GameGrid;
 		private var _levelData:GameLevelData;
+		private var _levelObjects:Vector.<GameLevelObject>;
 		private var _objectViewportLayer:ViewportLayer;
-		private var _objects:Vector.<GameObject>;
+		private var _playerObjects:Vector.<GameObject>;
 		private var _registry:GameRegistry; 
 		
 		public function GameBoard() {
@@ -28,7 +29,8 @@ package game {
 			this._container = new DisplayObject3D();
 			
 			this._containersByObject = new Dictionary(true);
-			this._objects = new Vector.<GameObject>();
+			this._levelObjects = new Vector.<GameLevelObject>();
+			this._playerObjects = new Vector.<GameObject>();
 			
 			this._levelData = this._registry.getEntry("levelData");
 			if (this._levelData)
@@ -75,7 +77,7 @@ package game {
 			/* Add object to objects viewport layer */
 			this._objectViewportLayer.addDisplayObject3D(wall, true);
 			
-			this._objects.push(wall);
+			this._levelObjects.push(wall);
 			this._container.addChild(wall);
 		}
 		
@@ -86,7 +88,7 @@ package game {
 				this._objectViewportLayer.addDisplayObject3D(object, true);
 				
 				/* Add object to list and set _activeObjectId to object position in list */
-				this._activeObjectId = this._objects.push(object)-1;
+				this._activeObjectId = this._playerObjects.push(object)-1;
 				
 				this._container.addChild(object);
 			}
@@ -113,8 +115,8 @@ package game {
 				var gridRef:Point = this._grid.coordToGridReference(u*this._grid.width, (v*-1+1)*this._grid.height);
 				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
 				
-				this._objects[this._activeObjectId].x = coord.x;
-				this._objects[this._activeObjectId].y = coord.y;
+				this._playerObjects[this._activeObjectId].x = coord.x;
+				this._playerObjects[this._activeObjectId].y = coord.y;
 				
 				if (map)
 					map.updateMarker(Math.round(u*100)/100, Math.round((v*-1+1)*100)/100);
@@ -125,14 +127,58 @@ package game {
 		}
 		
 		public function updateObjects():void {
+			this._updateLevelObjects();
+			this._updateCharacter();
+		}
+		
+		private function _updateLevelObjects():void {
 			/* Store reference to amount of objects on board */
-			var i:int = this._objects.length;
-			var object:GameObject;
+			var i:int = this._levelObjects.length;
+			var object:GameLevelObject;
 			
 			/* Loop through all objects */
 			while (i--) {
 				/* Basic object checks and updates */
-				object = this._objects[i];
+				object = this._levelObjects[i];
+			}
+		}
+		
+		private function _updateCharacter():void {
+			var characterGridRef:Point = this._grid.worldCoordToGridReference(this._character.container.x, this._character.container.y);
+			var nextSegmentCoord:Point = this._grid.gridReferenceToWorldCoord(characterGridRef.x, characterGridRef.y+1);
+			var nextSegmentDistance:int = nextSegmentCoord.y-this._character.container.y;
+			
+			/* Store reference to amount of objects on board */
+			var i:int = this._levelObjects.length;
+			var object:GameLevelObject;
+			
+			/* Character is inside grid boundary */
+			if (!this._grid.gridRefIsOutsideBoundary(characterGridRef.x, characterGridRef.y+1)) {
+				/* Loop through all objects */
+				while (i--) {
+					/* Basic object checks and updates */
+					object = this._levelObjects[i];
+					
+					var objectGridRef:Point = this._grid.worldCoordToGridReference(object.x, object.y);
+					
+					var objectDistanceSegmentsX:int = objectGridRef.x-characterGridRef.x;
+					var objectDistanceSegmentsY:int = objectGridRef.y-characterGridRef.y;
+					
+					var objectDistanceCoordX:int = objectGridRef.x-this._character.container.x;
+					var objectDistanceCoordY:int = objectGridRef.y-this._character.container.y;
+					
+					/* Object is in the next segment in front of character */
+					if (objectDistanceSegmentsY == 1 && objectDistanceSegmentsX == 0) {
+						var solid:Boolean = object.getAttribute("solid");
+						if (solid === true) {
+							/* Stop character from moving */
+						} else {
+							this._character.animateForward(nextSegmentDistance);
+						}
+					} else {
+						this._character.animateForward(nextSegmentDistance);
+					}
+				}
 			}
 		}
 		

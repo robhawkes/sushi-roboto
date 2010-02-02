@@ -52,6 +52,10 @@ package game {
 			this._scene.addChild(displayObject);
 		}
 		
+		public function removeChildFromScene(displayObject:DisplayObject3D):void {
+			this._scene.removeChild(displayObject);
+		}
+		
 		public function render():void {
 			this._renderer.render();
 		}

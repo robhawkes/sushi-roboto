@@ -25,6 +25,7 @@ package {
 		
 		/* GameBoard object */
 		private var _board:GameBoard;
+		private var _play:Boolean = false; // Is game playing (true), or paused (false)
 		
 		/* GameMap object */
 		private var _map:GameMap;
@@ -181,8 +182,10 @@ package {
 			/* Update markers */
 			this._updateMarkers();
 			
-			/* Update board objects */
-			this._board.updateObjects();
+			if (this._play) {
+				/* Update board objects */
+				this._board.updateObjects();
+			}
 			
 			/* Render the Papervision scene */
 			this._papervision.render();
@@ -207,6 +210,13 @@ package {
 		/* Keyboard listeners */
 		private function _onKeyDown(e:KeyboardEvent):void {
 			switch (e.keyCode) {
+				case 32: // Spacebar
+					if (!this._play) {
+						this._play = true;
+					} else {
+						this._play = false;
+					}
+					break;
 				case 38: // Up arrow
 					trace("Forward");
 					var characterGridRef:Point = this._board.grid.worldCoordToGridReference(this._board.character.container.x, this._board.character.container.y);
@@ -225,6 +235,17 @@ package {
 				case 39: // Right arrow
 					trace("Right");
 					this._board.character.animateRight(40);
+					break;
+				case 82: // r
+					var papervision:GamePapervision = this._registry.getEntry("papervision");
+					if (papervision) {
+						papervision.removeChildFromScene(this._board.container);
+						this._board = new GameBoard();
+						papervision.addChildToScene(this._board.container);
+						/* Initialise board viewport layers and populate board */
+						this._board.initViewportLayers();
+						this._board.populateBoard();
+					}
 					break;
 			}
 		}

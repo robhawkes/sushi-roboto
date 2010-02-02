@@ -25,9 +25,20 @@ package game {
 		public function animateForward(distance:int = 0):void {
 			if (!this._animated) {
 				this._animated = true;
-				Tweener.addTween(this._container, {y: this._container.y+distance, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._animated = false; }});
+				var x:int = this._container.x;
+				var y:int = this._container.y;
+				
+				if (this._container.rotationZ === 0) { // Up
+					y+=distance;
+				} else if (this._container.rotationZ === 90) { // Left
+					x-=distance;
+				} else if (this._container.rotationZ === 180 || this._container.rotationZ === -180) { // Down
+					y-=distance;
+				} else if (this._container.rotationZ === -90) { // Right
+					x+=distance;
+				}
+				Tweener.addTween(this._container, {x: x, y: y, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._animated = false; }});
 			}
-			//this._container.moveDown(distance);
 		}
 		
 		public function animateBackward(distance:int = 0):void {

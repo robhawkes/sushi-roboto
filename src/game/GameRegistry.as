@@ -15,10 +15,7 @@ package game {
 		}
 		
 		public function getEntry(key:String):* {
-			if (this.isEntry(key))
-				return this._register[key];
-			
-			return false;
+			return this._register[key];
 		}
 
 		

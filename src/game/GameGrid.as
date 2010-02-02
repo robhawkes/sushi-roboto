@@ -86,6 +86,13 @@ package game {
 			return worldCoord;
 		}
 		
+		public function gridRefIsOutsideBoundary(x:int, y:int):Boolean {
+			if (x < 1 || x > this._rows || y < 1 || y > this._columns)
+				return true;
+			
+			return false;
+		}
+		
 		public function get width():int {
 			return this._width;
 		}
