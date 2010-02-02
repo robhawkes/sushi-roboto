@@ -41,27 +41,6 @@ package game {
 			}
 		}
 		
-		public function animateBackward(distance:int = 0):void {
-			if (!this._animated) {
-				this._animated = true;
-				Tweener.addTween(this._container, {y: this._container.y-distance, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._animated = false; }});
-			}
-		}
-		
-		public function animateLeft(distance:int = 0):void {
-			if (!this._animated) {
-				this._animated = true;
-				Tweener.addTween(this._container, {x: this._container.x-distance, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._animated = false; }});
-			}
-		}
-		
-		public function animateRight(distance:int = 0):void {
-			if (!this._animated) {
-				this._animated = true;
-				Tweener.addTween(this._container, {x: this._container.x+distance, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._animated = false; }});
-			}
-		}
-		
 		public function get container():GameCharacterObject {
 			return this._container;
 		}

@@ -3,7 +3,6 @@ package game {
 	import com.transmote.flar.utils.geom.FLARPVGeomUtils;
 	
 	import flash.geom.Point;
-	import flash.utils.Dictionary;
 	
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.objects.DisplayObject3D;
@@ -15,7 +14,6 @@ package game {
 		private var _boardViewportLayer:ViewportLayer;
 		private var _character:GameCharacter;
 		private var _container:DisplayObject3D;
-		private var _containersByObject:Dictionary;
 		private var _grid:GameGrid;
 		private var _levelData:GameLevelData;
 		private var _levelObjects:Vector.<GameLevelObject>;
@@ -28,7 +26,6 @@ package game {
 			
 			this._container = new DisplayObject3D();
 			
-			this._containersByObject = new Dictionary(true);
 			this._levelObjects = new Vector.<GameLevelObject>();
 			this._playerObjects = new Vector.<GameObject>();
 			
@@ -59,12 +56,16 @@ package game {
 			this._container.addChild(this._grid.container);
 			
 			/* Add character to board */
-			this._container.addChild(this._character.container);
-			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
-			this._character.moveToPoint(characterPosition.x, characterPosition.y);
+			this._addCharacter();
 			
 			/* Add level objects to board */
 			this._addLevelObjects();
+		}
+		
+		private function _addCharacter():void {
+			this._container.addChild(this._character.container);
+			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
+			this._character.moveToPoint(characterPosition.x, characterPosition.y);
 		}
 		
 		private function _addLevelObjects():void {
@@ -82,16 +83,29 @@ package game {
 		}
 		
 		public function addDebugObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
-			/* TODO: Convert mandatory method parameters into object of optional parameters */ 
-			if (this._activeObjectId < 0) {
-				var object:GameObject = new GameDebugObject();
-				this._objectViewportLayer.addDisplayObject3D(object, true);
-				
-				/* Add object to list and set _activeObjectId to object position in list */
-				this._activeObjectId = this._playerObjects.push(object)-1;
-				
-				this._container.addChild(object);
+			if (this._levelData.getObjectInventory("debug") > 0) {
+				/* TODO: Convert mandatory method parameters into object of optional parameters */ 
+				if (this._activeObjectId < 0) {
+					var object:GameObject = new GameDebugObject();
+					this._objectViewportLayer.addDisplayObject3D(object, true);
+					
+					/* Add object to list and set _activeObjectId to object position in list */
+					this._activeObjectId = this._playerObjects.push(object)-1;
+					
+					this._container.addChild(object);
+				}
 			}
+		}
+		
+		public function resetBoard():void {
+			this._activeObjectId = -1;
+			
+			/* Remove current character object from the 3D scene */
+			this._container.removeChild(this._character.container);
+			
+			/* Add a new character object and reset position */
+			this._character = new GameCharacter();
+			this._addCharacter();
 		}
 		
 		public function updateBoard(marker:FLARMarker):void {
@@ -152,23 +166,54 @@ package game {
 			var i:int = this._levelObjects.length;
 			var object:GameLevelObject;
 			
-			/* Character is inside grid boundary */
-			if (!this._grid.gridRefIsOutsideBoundary(characterGridRef.x, characterGridRef.y+1)) {
+			/* Character is inside grid boundary by working out next grid segment based on character direction */
+			var rotation:int = this._character.container.rotationZ;
+			var nextSegGrid:Point = new Point(characterGridRef.x, characterGridRef.y);
+			
+			/* Distance in grid ref coords to next grid segment */ 
+			var nextSegDistanceX:int = 0;
+			var nextSegDistanceY:int = 0;
+
+			switch (rotation) {
+				case 0: // Up
+					nextSegGrid.y += 1;
+					nextSegDistanceY = 1;
+					break;
+				case -90: // Right
+					nextSegGrid.x += 1;
+					nextSegDistanceX = 1;
+					break;
+				case -180: // Down
+				case 180:
+					nextSegGrid.y -= 1;
+					nextSegDistanceY = -1;
+					break;
+				case 90: // Left
+					nextSegGrid.x -= 1;
+					nextSegDistanceX = -1;
+					break;
+			}
+			
+			/* Character is within grid boundary */
+			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
 				/* Loop through all objects */
 				while (i--) {
-					/* Basic object checks and updates */
+					/* Reference to current level object */
 					object = this._levelObjects[i];
 					
+					/* Grid reference of level object */
 					var objectGridRef:Point = this._grid.worldCoordToGridReference(object.x, object.y);
 					
+					/* Distance in grid segments between character and level object */
 					var objectDistanceSegmentsX:int = objectGridRef.x-characterGridRef.x;
 					var objectDistanceSegmentsY:int = objectGridRef.y-characterGridRef.y;
 					
+					/* Distance in coords between character and level object */
 					var objectDistanceCoordX:int = objectGridRef.x-this._character.container.x;
 					var objectDistanceCoordY:int = objectGridRef.y-this._character.container.y;
 					
 					/* Object is in the next segment in front of character */
-					if (objectDistanceSegmentsY == 1 && objectDistanceSegmentsX == 0) {
+					if (objectDistanceSegmentsY == nextSegDistanceY && objectDistanceSegmentsX == nextSegDistanceX) {
 						var solid:Boolean = object.getAttribute("solid");
 						if (solid === true) {
 							/* Stop character from moving */
@@ -180,6 +225,10 @@ package game {
 					}
 				}
 			}
+		}
+		
+		public function getTotalPlayerObjects():int {
+			return this._playerObjects.length;
 		}
 		
 		public function get character():GameCharacter {

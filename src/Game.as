@@ -201,7 +201,9 @@ package {
 						break;
 					case _objectPatternId: // Object marker
 						//trace("Update object marker");
-						this._board.updateActiveObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
+						if (this._board.getTotalPlayerObjects() > 0) { 
+							this._board.updateActiveObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
+						}
 						break;
 				}
 			}
@@ -219,32 +221,25 @@ package {
 					break;
 				case 38: // Up arrow
 					trace("Forward");
-					var characterGridRef:Point = this._board.grid.worldCoordToGridReference(this._board.character.container.x, this._board.character.container.y);
-					var coord:Point = this._board.grid.gridReferenceToWorldCoord(characterGridRef.x, characterGridRef.y+1);
-					var distance:int = coord.y - this._board.character.container.y;
-					this._board.character.animateForward(distance);
+					this._board.character.container.rotationZ = 0;
 					break;
 				case 40: // Down arrow
 					trace("Backward");
-					this._board.character.animateBackward(40);
+					this._board.character.container.rotationZ = 180;
 					break;
 				case 37: // Left arrow
 					trace("Left");
-					this._board.character.animateLeft(40);
+					this._board.character.container.rotationZ = 90;
 					break;
 				case 39: // Right arrow
 					trace("Right");
-					this._board.character.animateRight(40);
+					this._board.character.container.rotationZ = -90;
 					break;
 				case 82: // r
 					var papervision:GamePapervision = this._registry.getEntry("papervision");
 					if (papervision) {
-						papervision.removeChildFromScene(this._board.container);
-						this._board = new GameBoard();
-						papervision.addChildToScene(this._board.container);
-						/* Initialise board viewport layers and populate board */
-						this._board.initViewportLayers();
-						this._board.populateBoard();
+						this._play = false;
+						this._board.resetBoard();
 					}
 					break;
 			}
