@@ -20,6 +20,7 @@ package game {
 			
 			this._objectInventory = new Array();
 			this._objectInventory["debug"] = 1;
+			this._objectInventory["direction"] = 3;
 		}
 		
 		public function getObjectInventory(item:String):int {

@@ -6,6 +6,7 @@ package game {
 	public class GameDebugObject extends GameObject {
 		public function GameDebugObject() {
 			super();
+			this._type = "debug";
 			this._interactive = true;
 			this._initObject();
 		}

@@ -6,7 +6,6 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
-	import flash.geom.Point;
 	
 	import game.GameBoard;
 	import game.GameLevelData;
@@ -36,6 +35,7 @@ package {
 		/* Markers */
 		private const _boardPatternId:int = 3;
 		private const _objectPatternId:int = 1;
+		private const _directionPatternId:int = 0;
 		private var _activeMarker:FLARMarker;
 		
 		/* Papervision object */
@@ -155,9 +155,15 @@ package {
 				case _boardPatternId: // Board marker
 					trace("Added board marker");
 					break;
-				case _objectPatternId: // Object marker
-					trace("Added object marker");
+				case _objectPatternId: // Player object marker
+					trace("Added player object marker");
 					this._board.addDebugObject();
+					break;
+				case _directionPatternId: // Direction marker
+					trace("Added direction marker");
+					/*if (this._board.getObjectsInUseByName("direction") < 1) {
+						this._board.addDirectionObject();
+					}*/
 					break;
 			}	
 		}
@@ -168,9 +174,12 @@ package {
 				case _boardPatternId: // Board marker
 					trace("Removed board marker");
 					break;
-				case _objectPatternId: // Object marker
-					trace("Removed object marker");
-					break;	
+				case _objectPatternId: // Player object marker
+					trace("Removed player object marker");
+					break;
+				case _directionPatternId: // Direction marker
+					trace("Removed direction marker");
+					break;
 			}	
 			
 			this._map.removeMarker();
@@ -199,10 +208,16 @@ package {
 						//trace("Update board marker");
 						this._board.updateBoard(this._activeMarker);
 						break;
-					case _objectPatternId: // Object marker
-						//trace("Update object marker");
+					case _objectPatternId: // Player object marker
+						//trace("Update player object marker");
 						if (this._board.getTotalPlayerObjects() > 0) { 
-							this._board.updateActiveObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
+							this._board.updateActivePlayerObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
+						}
+						break;
+					case _directionPatternId: // Direction marker
+						//trace("Update direction marker");
+						if (this._board.getTotalDirectionObjects() > 0) {
+							this._board.updateActiveDirectionObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
 						}
 						break;
 				}
@@ -234,6 +249,10 @@ package {
 				case 39: // Right arrow
 					trace("Right");
 					this._board.character.container.rotationZ = -90;
+					break;
+				case 68: // d
+					/* Add new directional object */
+					this._board.addDirectionObject();
 					break;
 				case 82: // r
 					var papervision:GamePapervision = this._registry.getEntry("papervision");
