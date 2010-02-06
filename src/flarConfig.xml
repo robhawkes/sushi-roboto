@@ -7,8 +7,8 @@
 	<flarSourceSettings
 		sourceWidth="480"
 		sourceHeight="320"
-		displayWidth="640"
-		displayHeight="480"
+		displayWidth="800"
+		displayHeight="600"
 		framerate="25"
 		downsampleRatio="0.8" />
 

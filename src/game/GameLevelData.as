@@ -5,7 +5,7 @@ package game {
 		private var _rows:int;
 		private var _columns:int;
 		
-		private var _objectInventory:Array; 
+		private var _objectInventory:Object; 
 		
 		public function GameLevelData(levelId:int) {
 			this._populateData();
@@ -18,9 +18,9 @@ package game {
 			this._rows = 5;
 			this._columns = 5;
 			
-			this._objectInventory = new Array();
-			this._objectInventory["debug"] = 1;
-			this._objectInventory["direction"] = 3;
+			this._objectInventory = new Object();
+			this._objectInventory.debug = 1;
+			this._objectInventory.direction = 3;
 		}
 		
 		public function getObjectInventory(item:String):int {
@@ -44,6 +44,10 @@ package game {
 		
 		public function get columns():int {
 			return this._columns;
+		}
+		
+		public function get objectInventory():Object {
+			return this._objectInventory;
 		}
 	}
 }

@@ -1,4 +1,7 @@
 package {
+	/*
+	 * TODO: Decouple classes; end reliance on GameRegistry to pass classes around like GameLevelData
+	 */
 	import com.transmote.flar.FLARManager;
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.marker.FLARMarkerEvent;
@@ -14,7 +17,7 @@ package {
 	import game.GameRegistry;
 	
 	/* Change output settings */
-	[SWF(width="640", height="480", frameRate="25", backgroundColor="#000000")]
+	[SWF(width="800", height="600", frameRate="25", backgroundColor="#000000")]
 	public class Game extends Sprite {
 		/* GameRegistry object */
 		private var _registry:GameRegistry;
@@ -252,7 +255,11 @@ package {
 					break;
 				case 68: // d
 					/* Add new directional object */
-					this._board.addDirectionObject();
+					if (this._board.objectsRemainingByType("direction") > 0) {
+						this._board.addDirectionObject();
+					} else {
+						trace("No more directional objects left in invetory")
+					}
 					break;
 				case 82: // r
 					var papervision:GamePapervision = this._registry.getEntry("papervision");

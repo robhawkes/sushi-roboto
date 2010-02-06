@@ -22,6 +22,7 @@ package game {
 		private var _container:DisplayObject3D;
 		private var _directionObjects:Vector.<GameDirectionObject>;
 		private var _grid:GameGrid;
+		private var _inventory:GameInventory;
 		private var _levelData:GameLevelData;
 		private var _levelObjects:Vector.<GameLevelObject>;
 		private var _objectsInUseByType:Array;
@@ -45,6 +46,8 @@ package game {
 				this._grid = new GameGrid(this._levelData.width, this._levelData.height, this._levelData.rows, this._levelData.columns);
 			
 			this._character = new GameCharacter();
+			
+			this._initInventory();
 		}
 		
 		public function initViewportLayers():void {
@@ -60,6 +63,10 @@ package game {
 				
 				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
 			}
+		}
+		
+		private function _initInventory():void {
+			this._inventory = new GameInventory();
 		}
 		
 		public function populateBoard():void {
@@ -337,6 +344,20 @@ package game {
 			}
 		}
 		
+		private function _getObjectsInUseByType(type:String):int {
+			if (this._objectsInUseByType[type])
+				return this._objectsInUseByType[type];
+			
+			return 0;
+		}
+		
+		public function objectsRemainingByType(type:String):int {
+			if (this._levelData.getObjectInventory(type) > 0)
+				return this._levelData.getObjectInventory(type)-this._getObjectsInUseByType(type);
+			
+			return 0;
+		}
+		
 		public function getTotalDirectionObjects():int {
 			return this._directionObjects.length;
 		}
@@ -344,13 +365,6 @@ package game {
 		public function getTotalPlayerObjects():int {
 			return this._playerObjects.length;
 		}
-		
-		/*public function objectsInUseByType(type:String):int {
-			if (this._objectsInUseByType[type])
-				return this._objectsInUseByType[type];
-			
-			return 0; 
-		}*/
 		
 		public function set activeDirectionObjectId(id:int):void {
 			this._activeDirectionObjectId = id;
