@@ -5,6 +5,7 @@ package game {
 	public class GameInventory {
 		private var _levelData:GameLevelData;
 		private var _registry:GameRegistry;
+		private var _selectedItem:String;
 		private var _sprite:Sprite;
 		
 		public function GameInventory() {
@@ -12,6 +13,9 @@ package game {
 			this._levelData = this._registry.getEntry("levelData");
 			
 			this._drawInventory();
+			
+			/* Default selection to debug object */
+			this._selectedItem = "debug";
 		}
 		
 		private function _drawInventory():void {
@@ -47,6 +51,10 @@ package game {
 			if (this._levelData.getObjectInventory(item) > 0) {
 				
 			}
+		}
+		
+		public function getSelectedItem():String {
+			return this._selectedItem;
 		}
 	}
 }

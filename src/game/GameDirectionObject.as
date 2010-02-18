@@ -12,6 +12,7 @@ package game {
 		
 		private function _initObject():void {
 			var material:ColorMaterial = new ColorMaterial(0xFF0000);
+			material.interactive = true;
 			
 			var object:PaperPlane = new PaperPlane(material, 0.1);
 			object.z -= 5;
@@ -19,6 +20,8 @@ package game {
 			object.pitch(-90);
 			
 			this.addChild(object);
+			
+			this._interactiveObject = object;
 		}
 		
 		public override function update():void {

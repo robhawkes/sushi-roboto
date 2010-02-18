@@ -11,6 +11,7 @@ package {
 	import flash.events.KeyboardEvent;
 	
 	import game.GameBoard;
+	import game.GameInventory;
 	import game.GameLevelData;
 	import game.GameMap;
 	import game.GamePapervision;
@@ -24,6 +25,9 @@ package {
 		
 		/* GameLevelData object */
 		private var _levelData:GameLevelData;
+		
+		/* GameInventory object */
+		private var _inventory:GameInventory;
 		
 		/* GameBoard object */
 		private var _board:GameBoard;
@@ -52,6 +56,9 @@ package {
 			/* Initialise current level data */
 			this._initLevelData();	
 			
+			/* Initialise game inventory system */
+			this._initInventory();
+			
 			/* Initialise game board */
 			this._initBoard();
 			
@@ -77,6 +84,11 @@ package {
 			
 			this.addChild(this._map);
 			this._registry.setEntry("gameMap", this._map);
+		}
+		
+		/* Game inventory initialisation */
+		private function _initInventory():void {
+			this._inventory = new GameInventory();
 		}
 		
 		/* Game board initialisation */
@@ -160,7 +172,14 @@ package {
 					break;
 				case _objectPatternId: // Player object marker
 					trace("Added player object marker");
-					this._board.addDebugObject();
+					var selectedItemName:String = this._inventory.getSelectedItem();
+					if (selectedItemName) {
+						if (this._board.objectsRemainingByType(selectedItemName) > 0) {
+							this._board.addDebugObject();
+						} else {
+							trace("No more "+selectedItemName+" objects left in invetory")
+						}
+					}
 					break;
 				case _directionPatternId: // Direction marker
 					trace("Added direction marker");

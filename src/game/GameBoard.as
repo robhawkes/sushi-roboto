@@ -10,6 +10,7 @@ package game {
 	import org.papervision3d.core.math.Matrix3D;
 	import org.papervision3d.core.math.Number3D;
 	import org.papervision3d.core.render.data.RenderHitData;
+	import org.papervision3d.events.InteractiveScene3DEvent;
 	import org.papervision3d.objects.DisplayObject3D;
 	import org.papervision3d.view.layer.ViewportLayer;
 	import org.papervision3d.view.layer.util.ViewportLayerSortMode;
@@ -46,8 +47,6 @@ package game {
 				this._grid = new GameGrid(this._levelData.width, this._levelData.height, this._levelData.rows, this._levelData.columns);
 			
 			this._character = new GameCharacter();
-			
-			this._initInventory();
 		}
 		
 		public function initViewportLayers():void {
@@ -59,14 +58,14 @@ package game {
 				this._boardViewportLayer.sortMode = ViewportLayerSortMode.INDEX_SORT;
 
 				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
+				
 				this._boardViewportLayer.addLayer(this._objectViewportLayer);
 				
 				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
+				
+				/* Enable double click mouse events */
+				this._objectViewportLayer.doubleClickEnabled = true;
 			}
-		}
-		
-		private function _initInventory():void {
-			this._inventory = new GameInventory();
 		}
 		
 		public function populateBoard():void {
@@ -120,9 +119,42 @@ package game {
 				} else {
 					this._objectsInUseByType[object.type] = 1;
 				}
+				
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickDirectionalObject);
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickDirectionalObject);
 			
 				this._container.addChild(object);
 			}
+		}
+		
+		private function _onClickDirectionalObject(e:InteractiveScene3DEvent):void {
+			var directionObjectId:int = this._directionObjects.indexOf(e.displayObject3D.parent);
+			this._activeDirectionObjectId = directionObjectId;
+			
+			trace("Clicked directional object "+directionObjectId);
+		}
+		
+		private function _onDoubleClickDirectionalObject(e:InteractiveScene3DEvent):void {
+			var directionObjectId:int = this._directionObjects.indexOf(e.displayObject3D.parent);
+			this.removeDirectionObject(directionObjectId);
+			
+			trace("Double clicked directional object "+directionObjectId);
+		}
+		
+		public function removeDirectionObject(directionObjectId:int):void {
+			if (directionObjectId == this._activeDirectionObjectId)
+				this._activeDirectionObjectId = -1;
+			
+			var object:GameObject = this._directionObjects[directionObjectId];
+			
+			/* Decrease number of direction objects in use */
+			if (this._objectsInUseByType[object.type]) {
+				this._objectsInUseByType[object.type] -= 1;
+			} else {
+				this._objectsInUseByType[object.type] = 0;
+			}
+			
+			this._container.removeChild(object);
 		}
 		
 		public function addDebugObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -139,8 +171,48 @@ package game {
 				/* Add object to list and set _activeObjectId to object position in list */
 				this._activePlayerObjectId = this._playerObjects.push(object)-1;
 				
+				/* Increase number of direction objects in use */
+				if (this._objectsInUseByType[object.type]) {
+					this._objectsInUseByType[object.type] += 1;
+				} else {
+					this._objectsInUseByType[object.type] = 1;
+				}
+				
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickPlayerObject);
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
+				
 				this._container.addChild(object);
 			}
+		}
+		
+		private function _onClickPlayerObject(e:InteractiveScene3DEvent):void {
+			var playerObjectId:int = this._playerObjects.indexOf(e.displayObject3D.parent);
+			this._activePlayerObjectId = playerObjectId;
+			
+			trace("Clicked player object "+playerObjectId);
+		}
+		
+		private function _onDoubleClickPlayerObject(e:InteractiveScene3DEvent):void {
+			var playerObjectId:int = this._playerObjects.indexOf(e.displayObject3D.parent);
+			this.removePlayerObject(playerObjectId);
+			
+			trace("Double clicked player object "+playerObjectId);
+		}
+		
+		public function removePlayerObject(playerObjectId:int):void {
+			if (playerObjectId == this._activePlayerObjectId)
+				this._activePlayerObjectId = -1;
+			
+			var object:GameObject = this._playerObjects[playerObjectId];
+			
+			/* Decrease number of direction objects in use */
+			if (this._objectsInUseByType[object.type]) {
+				this._objectsInUseByType[object.type] -= 1;
+			} else {
+				this._objectsInUseByType[object.type] = 0;
+			}
+			
+			this._container.removeChild(object);
 		}
 		
 		public function resetBoard():void {
