@@ -5,6 +5,7 @@ package game {
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.utils.geom.FLARPVGeomUtils;
 	
+	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
 	
 	import org.papervision3d.core.math.Matrix3D;
@@ -36,6 +37,13 @@ package game {
 			
 			this._container = new DisplayObject3D();
 			
+			/* Debug settings to show board on load */
+			this._container.x = 0;
+			this._container.y = 0;
+			this._container.z = 400;
+			this._container.rotationX = -135;
+			this._container.pitch(180);
+			
 			this._levelObjects = new Vector.<GameLevelObject>();
 			this._directionObjects = new Vector.<GameDirectionObject>();
 			this._playerObjects = new Vector.<GameDebugObject>();
@@ -63,6 +71,16 @@ package game {
 				
 				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
 				
+				/* Mask out green areas (walls of pits etc) http://saqoosha.net/en/2009/01/08/1676/ */
+				this._objectViewportLayer.filters = [
+					new ColorMatrixFilter([
+						1, 0, 0, 0, 0,
+						0, 1, 0, 0, 0,
+						0, 0, 1, 0, 0,
+						1, -1, 1, 1, 0
+					])
+				];
+				
 				/* Enable double click mouse events */
 				this._objectViewportLayer.doubleClickEnabled = true;
 			}
@@ -88,7 +106,7 @@ package game {
 		private function _addLevelObjects():void {
 			var wall:GameLevelWallObject = new GameLevelWallObject();
 			
-			var coord:Point = this._grid.gridReferenceToWorldCoord(1, 3);
+			var coord:Point = this._grid.gridReferenceToWorldCoord(3, 3);
 			wall.x = coord.x;
 			wall.y = coord.y;
 			
@@ -97,6 +115,17 @@ package game {
 			
 			this._levelObjects.push(wall);
 			this._container.addChild(wall);
+			
+			var water:GameLevelWaterObject = new GameLevelWaterObject();
+			coord = this._grid.gridReferenceToWorldCoord(1, 3);
+			water.x = coord.x;
+			water.y = coord.y;
+			
+			/* Add object to objects viewport layer */
+			this._objectViewportLayer.addDisplayObject3D(water, true);
+			
+			this._levelObjects.push(water);
+			this._container.addChild(water);
 		}
 		
 		public function addDirectionObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -233,6 +262,16 @@ package game {
 			
 			/* Change X rotation to correct angle */
 			this._container.pitch(180);
+			
+			/*
+			trace("Scale: "+this._container.scale);
+			trace("RotationX: "+this._container.rotationX);
+			trace("RotationY: "+this._container.rotationY);
+			trace("RotationZ: "+this._container.rotationZ);
+			trace("X: "+this._container.x);
+			trace("Y: "+this._container.y);
+			trace("Z: "+this._container.z);
+			*/
 		}
 		
 		public function updateActiveDirectionObject(marker:FLARMarker, stageWidth:int = 0, stageHeight:int = 0):void {
@@ -306,7 +345,10 @@ package game {
 		
 		public function updateObjects():void {
 			this._updateLevelObjects();
-			this._updateCharacter();
+			
+			/* Only update if character isn't moving */
+			if (!this.character.moving)
+				this._updateCharacter();
 		}
 		
 		private function _updateLevelObjects():void {
@@ -360,8 +402,6 @@ package game {
 					break;
 			}
 			
-			/* Character is within grid boundary */
-			
 			/* Loop through all direction objects */
 			while (directionIndex--) {
 				/* Reference to current direction object */
@@ -384,7 +424,11 @@ package game {
 				}
 			}
 				
+			/* Character is within grid boundary */
 			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
+				/* Movement toggle */
+				var moveCharacter:Boolean = true;
+				
 				/* Loop through all level objects */
 				while (levelIndex--) {
 					/* Reference to current level object */
@@ -401,18 +445,37 @@ package game {
 					var levelObjectDistanceCoordX:int = levelObjectGridRef.x-this._character.container.x;
 					var levelObjectDistanceCoordY:int = levelObjectGridRef.y-this._character.container.y;
 					
-					/* Object is in the next segment in front of character */
+					/* Object attributes */
+					var solid:Boolean = levelObject.getAttribute("solid");
+					var fluid:Boolean = levelObject.getAttribute("fluid");
+					
+					/* Object is on the tile in front of character */
 					if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {
-						var solid:Boolean = levelObject.getAttribute("solid");
+						/* Check if object is solid */
 						if (solid === true) {
 							/* Stop character from moving */
-						} else {
-							this._character.animateForward(nextSegmentDistance);
+							moveCharacter = false;
 						}
+					/* Object is on the same tile as character */ 
+					} else if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
+						/* Check effects to health */
+						
+						/* Check if fluid */
+						if (fluid === true) {
+							/* Stop character and sink once */
+							moveCharacter = false;
+							if (this._character.container.z <= 0) {
+								this._character.animateDown(nextSegmentDistance);
+							}
+						}
+					/* Object is not on the same or next tile as character */ 
 					} else {
-						this._character.animateForward(nextSegmentDistance);
+						
 					}
 				}
+				
+				if (moveCharacter)
+					this._character.animateForward(nextSegmentDistance);
 			}
 		}
 		

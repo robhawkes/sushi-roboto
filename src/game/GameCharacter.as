@@ -2,8 +2,8 @@ package game {
 	import caurina.transitions.Tweener;
 	
 	public class GameCharacter {
-		private var _animated:Boolean = false;
 		private var _container:GameCharacterObject;
+		private var _moving:Boolean = false;
 		
 		public function GameCharacter() {
 			this._initCharacter3D();
@@ -23,8 +23,8 @@ package game {
 		}
 		
 		public function animateForward(distance:int = 0):void {
-			if (!this._animated) {
-				this._animated = true;
+			if (!this._moving) {
+				this._moving = true;
 				var x:int = this._container.x;
 				var y:int = this._container.y;
 				
@@ -37,12 +37,26 @@ package game {
 				} else if (this._container.rotationZ === -90) { // Right
 					x+=distance;
 				}
-				Tweener.addTween(this._container, {x: x, y: y, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._animated = false; }});
+				Tweener.addTween(this._container, {x: x, y: y, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
+			}
+		}
+			
+		public function animateDown(distance:int = 0):void {
+			if (!this._moving) {
+				this._moving = true;
+				var z:int = this._container.z;
+				z+=distance;
+				
+				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
 		}
 		
 		public function get container():GameCharacterObject {
 			return this._container;
+		}
+		
+		public function get moving():Boolean {
+			return this._moving;
 		}
 	}
 }

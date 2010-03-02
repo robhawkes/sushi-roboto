@@ -18,7 +18,7 @@ package {
 	import game.GameRegistry;
 	
 	/* Change output settings */
-	[SWF(width="800", height="600", frameRate="25", backgroundColor="#000000")]
+	[SWF(width="1024", height="768", frameRate="25", backgroundColor="#000000")]
 	public class Game extends Sprite {
 		/* GameRegistry object */
 		private var _registry:GameRegistry;

@@ -9,7 +9,7 @@ package game {
 		}
 		
 		private function _initObject():void {
-			var material:ColorMaterial = new ColorMaterial(0x00FF00);
+			var material:ColorMaterial = new ColorMaterial(0x0000FF);
 
 			/* Collada madel */
 			/*
