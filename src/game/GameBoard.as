@@ -21,6 +21,7 @@ package game {
 		private var _activePlayerObjectId:int = -1;
 		private var _boardViewportLayer:ViewportLayer;
 		private var _character:GameCharacter;
+		private var _completed:Boolean;
 		private var _container:DisplayObject3D;
 		private var _directionObjects:Vector.<GameDirectionObject>;
 		private var _grid:GameGrid;
@@ -126,6 +127,18 @@ package game {
 			
 			this._levelObjects.push(water);
 			this._container.addChild(water);
+			
+			/* Add finish line */
+			var finish:GameLevelFinishObject = new GameLevelFinishObject();
+			coord = this._grid.gridReferenceToWorldCoord(5, 1);
+			finish.x = coord.x;
+			finish.y = coord.y;
+			
+			/* Add object to objects viewport layer */
+			this._objectViewportLayer.addDisplayObject3D(finish, true);
+			
+			this._levelObjects.push(finish);
+			this._container.addChild(finish);
 		}
 		
 		public function addDirectionObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -423,57 +436,66 @@ package game {
 					this._character.container.rotationZ = directionObject.rotationZ;
 				}
 			}
-				
-			/* Character is within grid boundary */
-			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
-				/* Movement toggle */
-				var moveCharacter:Boolean = true;
-				
-				/* Loop through all level objects */
-				while (levelIndex--) {
-					/* Reference to current level object */
-					levelObject = this._levelObjects[levelIndex];
-					
-					/* Grid reference of level object */
-					var levelObjectGridRef:Point = this._grid.worldCoordToGridReference(levelObject.x, levelObject.y);
-					
-					/* Distance in grid segments between character and level object */
-					var levelObjectDistanceSegmentsX:int = levelObjectGridRef.x-characterGridRef.x;
-					var levelObjectDistanceSegmentsY:int = levelObjectGridRef.y-characterGridRef.y;
-					
-					/* Distance in coords between character and level object */
-					var levelObjectDistanceCoordX:int = levelObjectGridRef.x-this._character.container.x;
-					var levelObjectDistanceCoordY:int = levelObjectGridRef.y-this._character.container.y;
-					
-					/* Object attributes */
-					var solid:Boolean = levelObject.getAttribute("solid");
-					var fluid:Boolean = levelObject.getAttribute("fluid");
-					
-					/* Object is on the tile in front of character */
-					if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {
-						/* Check if object is solid */
-						if (solid === true) {
-							/* Stop character from moving */
-							moveCharacter = false;
-						}
-					/* Object is on the same tile as character */ 
-					} else if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
-						/* Check effects to health */
 						
-						/* Check if fluid */
-						if (fluid === true) {
-							/* Stop character and sink once */
-							moveCharacter = false;
-							if (this._character.container.z <= 0) {
-								this._character.animateDown(nextSegmentDistance);
-							}
-						}
-					/* Object is not on the same or next tile as character */ 
-					} else {
-						
+			/* Movement toggle */
+			var moveCharacter:Boolean = true;
+			
+			/* Loop through all level objects */
+			while (levelIndex--) {
+				/* Reference to current level object */
+				levelObject = this._levelObjects[levelIndex];
+				
+				/* Grid reference of level object */
+				var levelObjectGridRef:Point = this._grid.worldCoordToGridReference(levelObject.x, levelObject.y);
+				
+				/* Distance in grid segments between character and level object */
+				var levelObjectDistanceSegmentsX:int = levelObjectGridRef.x-characterGridRef.x;
+				var levelObjectDistanceSegmentsY:int = levelObjectGridRef.y-characterGridRef.y;
+				
+				/* Distance in coords between character and level object */
+				var levelObjectDistanceCoordX:int = levelObjectGridRef.x-this._character.container.x;
+				var levelObjectDistanceCoordY:int = levelObjectGridRef.y-this._character.container.y;
+				
+				/* Object attributes */
+				var finish:Boolean = levelObject.getAttribute("finish");
+				var solid:Boolean = levelObject.getAttribute("solid");
+				var fluid:Boolean = levelObject.getAttribute("fluid");
+				
+				/* Object is on the same tile as character */
+				if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
+					/* Check if finish line */
+					if (finish === true) {
+						this._completed = true;
+						break;
 					}
+					
+					/* Check if fluid */
+					if (fluid === true) {
+						/* Stop character and sink once */
+						moveCharacter = false;
+						if (this._character.container.z <= 0) {
+							this._character.animateDown(nextSegmentDistance);
+						}
+						this.character.alive = false;
+						break;
+					}
+				/* Object is on the tile in front of character */ 
+				} else if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {
+					/* Check if object is solid */
+					if (solid === true) {
+						/* Stop character from moving */
+						moveCharacter = false;
+						this.character.alive = false;
+						break;
+					}
+				/* Object is not on the same or next tile as character */ 
+				} else {
+					
 				}
+			}
 				
+			/* Character will be within grid boundary */
+			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
 				if (moveCharacter)
 					this._character.animateForward(nextSegmentDistance);
 			}
@@ -507,6 +529,10 @@ package game {
 		
 		public function get character():GameCharacter {
 			return this._character;
+		}
+		
+		public function get completed():Boolean {
+			return this._completed;
 		}
 		
 		public function get container():DisplayObject3D {

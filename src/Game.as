@@ -213,9 +213,17 @@ package {
 			/* Update markers */
 			this._updateMarkers();
 			
-			if (this._play) {
-				/* Update board objects */
-				this._board.updateObjects();
+			/* Game is playing and character is alive */
+			if (this._play && this._board.character.alive) {
+				if (this._board.completed) {
+					trace("You win!");
+					this._play = false;
+				} else {				
+					/* Update board objects */
+					this._board.updateObjects();
+				}
+			} else if (!this._board.character.alive) {
+				trace("Character is dead");
 			}
 			
 			/* Render the Papervision scene */
@@ -232,13 +240,13 @@ package {
 						break;
 					case _objectPatternId: // Player object marker
 						//trace("Update player object marker");
-						if (this._board.getTotalPlayerObjects() > 0) { 
+						if (this._board.getTotalPlayerObjects() > 0 && !this._play) { 
 							this._board.updateActivePlayerObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
 						}
 						break;
 					case _directionPatternId: // Direction marker
 						//trace("Update direction marker");
-						if (this._board.getTotalDirectionObjects() > 0) {
+						if (this._board.getTotalDirectionObjects() > 0 && !this._play) {
 							this._board.updateActiveDirectionObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
 						}
 						break;

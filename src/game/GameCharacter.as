@@ -2,6 +2,7 @@ package game {
 	import caurina.transitions.Tweener;
 	
 	public class GameCharacter {
+		public var alive:Boolean = true;
 		private var _container:GameCharacterObject;
 		private var _moving:Boolean = false;
 		
@@ -50,7 +51,7 @@ package game {
 				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
 		}
-		
+			
 		public function get container():GameCharacterObject {
 			return this._container;
 		}
