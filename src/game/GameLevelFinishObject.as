@@ -15,11 +15,11 @@ package game {
 			
 			this._setAttributes(attributes);
 			
-			var material:ColorMaterial = new ColorMaterial(0x60C0FF);
+			var material:ColorMaterial = new ColorMaterial(0xffae00);
 			var materialsList:MaterialsList = new MaterialsList({all: material});
 			
-			var object:Cube = new Cube(materialsList, 40, 40, 40);
-			object.z -= 0.5 * 40;
+			var object:Cube = new Cube(materialsList, 40, 2, 40);
+			object.z -= 0.5 * 2;
 			
 			this.addChild(object);
 		}

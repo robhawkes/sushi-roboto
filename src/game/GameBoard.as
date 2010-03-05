@@ -105,40 +105,37 @@ package game {
 		}
 		
 		private function _addLevelObjects():void {
-			var wall:GameLevelWallObject = new GameLevelWallObject();
-			
-			var coord:Point = this._grid.gridReferenceToWorldCoord(3, 3);
-			wall.x = coord.x;
-			wall.y = coord.y;
-			
-			/* Add object to objects viewport layer */
-			this._objectViewportLayer.addDisplayObject3D(wall, true);
-			
-			this._levelObjects.push(wall);
-			this._container.addChild(wall);
-			
-			var water:GameLevelWaterObject = new GameLevelWaterObject();
-			coord = this._grid.gridReferenceToWorldCoord(1, 3);
-			water.x = coord.x;
-			water.y = coord.y;
-			
-			/* Add object to objects viewport layer */
-			this._objectViewportLayer.addDisplayObject3D(water, true);
-			
-			this._levelObjects.push(water);
-			this._container.addChild(water);
-			
-			/* Add finish line */
-			var finish:GameLevelFinishObject = new GameLevelFinishObject();
-			coord = this._grid.gridReferenceToWorldCoord(5, 1);
-			finish.x = coord.x;
-			finish.y = coord.y;
-			
-			/* Add object to objects viewport layer */
-			this._objectViewportLayer.addDisplayObject3D(finish, true);
-			
-			this._levelObjects.push(finish);
-			this._container.addChild(finish);
+			for each (var levelObjectItem:Object in this._levelData.levelObjects) {
+				//trace("Place "+levelObjectItem.type+" at "+levelObjectItem.position);
+				var levelObject:GameLevelObject;
+				
+				switch (levelObjectItem.type) {
+					case "finish":
+						levelObject = new GameLevelFinishObject();
+						break;
+					case "wall":
+						levelObject = new GameLevelWallObject();
+						break;
+					case "water":
+						levelObject = new GameLevelWaterObject();
+						break;
+					default:
+						trace("There are no objects of type "+levelObjectItem.type);
+						break;
+				}
+				
+				if (levelObject) {
+					var coord:Point = this._grid.gridReferenceToWorldCoord(levelObjectItem.position.x, levelObjectItem.position.y);
+					levelObject.x = coord.x;
+					levelObject.y = coord.y;
+					
+					/* Add object to objects viewport layer */
+					this._objectViewportLayer.addDisplayObject3D(levelObject, true);
+					
+					this._levelObjects.push(levelObject);
+					this._container.addChild(levelObject);
+				}
+			}
 		}
 		
 		public function addDirectionObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -257,16 +254,17 @@ package game {
 			this._container.removeChild(object);
 		}
 		
+		/* Recode this method so it actually resets the board to previous state */
 		public function resetBoard():void {
+			this._completed = false;
 			this._activeDirectionObjectId = -1;
 			this._activePlayerObjectId = -1;
 			
-			/* Remove current character object from the 3D scene */
-			this._container.removeChild(this._character.container);
-			
-			/* Add a new character object and reset position */
-			this._character = new GameCharacter();
-			this._addCharacter();
+			/* Reset character */
+			this._character.reset();
+			this._character.container.rotationZ = 0;
+			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
+			this._character.moveToPoint(characterPosition.x, characterPosition.y);
 		}
 		
 		public function updateBoard(marker:FLARMarker):void {
@@ -377,43 +375,14 @@ package game {
 		}
 		
 		private function _updateCharacter():void {
+			/* Calculate next segment based on direction rather than manually */
 			var characterGridRef:Point = this._grid.worldCoordToGridReference(this._character.container.x, this._character.container.y);
 			var nextSegmentCoord:Point = this._grid.gridReferenceToWorldCoord(characterGridRef.x, characterGridRef.y+1);
 			var nextSegmentDistance:int = nextSegmentCoord.y-this._character.container.y;
 			
-			/* Store reference to amount of objects on board */
+			/* Store reference to amount of direction objects on board */
 			var directionIndex:int = this._directionObjects.length;
 			var directionObject:GameDirectionObject;
-			var levelIndex:int = this._levelObjects.length;
-			var levelObject:GameLevelObject;
-			
-			/* Character is inside grid boundary by working out next grid segment based on character direction */
-			var rotation:int = this._character.container.rotationZ;
-			var nextSegGrid:Point = new Point(characterGridRef.x, characterGridRef.y);
-			
-			/* Distance in grid ref coords to next grid segment */ 
-			var nextSegDistanceX:int = 0;
-			var nextSegDistanceY:int = 0;
-
-			switch (rotation) {
-				case 0: // Up
-					nextSegGrid.y += 1;
-					nextSegDistanceY = 1;
-					break;
-				case -90: // Right
-					nextSegGrid.x += 1;
-					nextSegDistanceX = 1;
-					break;
-				case -180: // Down
-				case 180:
-					nextSegGrid.y -= 1;
-					nextSegDistanceY = -1;
-					break;
-				case 90: // Left
-					nextSegGrid.x -= 1;
-					nextSegDistanceX = -1;
-					break;
-			}
 			
 			/* Loop through all direction objects */
 			while (directionIndex--) {
@@ -435,6 +404,38 @@ package game {
 				if (directionObjectDistanceSegmentsY === 0 && directionObjectDistanceSegmentsX === 0) {
 					this._character.container.rotationZ = directionObject.rotationZ;
 				}
+			}
+			
+			/* Store reference to amount of level objects on board */
+			var levelIndex:int = this._levelObjects.length;
+			var levelObject:GameLevelObject;
+			
+			/* Reference to current character rotation and position */
+			var rotation:int = this._character.container.rotationZ;
+			var nextSegGrid:Point = new Point(characterGridRef.x, characterGridRef.y);
+			
+			/* Distance in grid ref coords to next grid segment */ 
+			var nextSegDistanceX:int = 0;
+			var nextSegDistanceY:int = 0;
+			
+			switch (rotation) {
+				case 0: // Up
+					nextSegGrid.y += 1;
+					nextSegDistanceY = 1;
+					break;
+				case -90: // Right
+					nextSegGrid.x += 1;
+					nextSegDistanceX = 1;
+					break;
+				case -180: // Down
+				case 180:
+					nextSegGrid.y -= 1;
+					nextSegDistanceY = -1;
+					break;
+				case 90: // Left
+					nextSegGrid.x -= 1;
+					nextSegDistanceX = -1;
+					break;
 			}
 						
 			/* Movement toggle */

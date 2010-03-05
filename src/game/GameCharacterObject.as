@@ -12,15 +12,13 @@ package game {
 			var material:ColorMaterial = new ColorMaterial(0x0000FF);
 
 			/* Collada madel */
-			/*
-			var material1:BitmapFileMaterial = new BitmapFileMaterial("resources/texture.jpg");
+			/*var material1:BitmapFileMaterial = new BitmapFileMaterial("resources/texture.jpg");
 			var material2:BitmapFileMaterial = new BitmapFileMaterial("resources/texture2.jpg");
 			var objectMaterials:MaterialsList = new MaterialsList({Material1: material1, Material2: material2});
 			var object:Collada = new Collada("resources/robot.dae", objectMaterials);
 			object.scale = 0.001;
 			object.rotationZ = 180;
-			object.rotationX = -90;
-			*/
+			object.rotationX = -90;*/
 			
 			/* Debug model */
 			var object:PaperPlane = new PaperPlane(material, 0.1);

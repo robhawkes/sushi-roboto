@@ -7,10 +7,10 @@
 	<flarSourceSettings
 		sourceWidth="480"
 		sourceHeight="320"
-		displayWidth="1024"
-		displayHeight="768"
+		displayWidth="800"
+		displayHeight="600"
 		framerate="25"
-		downsampleRatio="0.8" />
+		downsampleRatio="0.6" />
 
 	<!-- miscellaneous FLARManager settings -->
 	<flarManagerSettings

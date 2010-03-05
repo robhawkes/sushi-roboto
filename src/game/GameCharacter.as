@@ -5,6 +5,7 @@ package game {
 		public var alive:Boolean = true;
 		private var _container:GameCharacterObject;
 		private var _moving:Boolean = false;
+		private var _origin:Array;
 		
 		public function GameCharacter() {
 			this._initCharacter3D();
@@ -50,6 +51,14 @@ package game {
 				
 				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
+		}
+			
+		public function reset():void {
+			this.alive = true;
+			this._moving = false;
+			this._container.x = 0;
+			this._container.y = 0;
+			this._container.z = 0;
 		}
 			
 		public function get container():GameCharacterObject {
