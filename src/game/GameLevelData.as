@@ -22,10 +22,21 @@ package game {
 			this._columns = 6;
 			
 			this._levelObjects = new Array();
-			this._levelObjects.push({type: "wall", position: new Point(3, 2)},
-									{type: "wall", position: new Point(4, 4)},
-									{type: "water", position: new Point(1, 3)},
-									{type: "finish", position: new Point(5, 7)});
+			this._levelObjects.push({type: "conveyor", position: new Point(3, 2)},
+									{type: "conveyor", position: new Point(3, 3)},
+									{type: "wall", position: new Point(1, 3)},
+									{type: "wall", position: new Point(2, 3)},
+									{type: "wall", position: new Point(2, 1)},
+									{type: "wall", position: new Point(2, 5)},
+									{type: "wall", position: new Point(4, 5)},
+									{type: "wall", position: new Point(6, 5)},
+									{type: "fire", position: new Point(5, 1)},
+									{type: "fire", position: new Point(5, 2)},
+									{type: "fire", position: new Point(6, 2)},
+									{type: "fire", position: new Point(3, 6)},
+									{type: "wasabi", position: new Point(4, 1), texture: "bottom"},
+									{type: "wasabi", position: new Point(4, 2), texture: "top"},
+									{type: "finish", position: new Point(6, 0)});
 			
 			this._objectInventory = new Array();
 			this._objectInventory["debug"] = 3;

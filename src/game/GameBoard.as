@@ -67,6 +67,7 @@ package game {
 				this._boardViewportLayer.sortMode = ViewportLayerSortMode.INDEX_SORT;
 
 				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
+				this._objectViewportLayer.alpha = 0.8;
 				
 				this._boardViewportLayer.addLayer(this._objectViewportLayer);
 				
@@ -110,11 +111,24 @@ package game {
 				var levelObject:GameLevelObject;
 				
 				switch (levelObjectItem.type) {
+					case "conveyor":
+						levelObject = new GameLevelConveyorObject();
+						break;
 					case "finish":
 						levelObject = new GameLevelFinishObject();
 						break;
+					case "fire":
+						levelObject = new GameLevelFireObject();
+						break;
 					case "wall":
 						levelObject = new GameLevelWallObject();
+						break;
+					case "wasabi":
+						var texture:String = "single";
+						if (levelObjectItem.texture) {
+							texture = levelObjectItem.texture;
+						}
+						levelObject = new GameLevelWasabiObject(texture);
 						break;
 					case "water":
 						levelObject = new GameLevelWaterObject();
@@ -458,35 +472,66 @@ package game {
 				var levelObjectDistanceCoordY:int = levelObjectGridRef.y-this._character.container.y;
 				
 				/* Object attributes */
+				var fatal:Boolean = levelObject.getAttribute("fatal");
 				var finish:Boolean = levelObject.getAttribute("finish");
 				var solid:Boolean = levelObject.getAttribute("solid");
 				var fluid:Boolean = levelObject.getAttribute("fluid");
+				var direction:String = levelObject.getAttribute("direction");
 				
 				/* Object is on the same tile as character */
 				if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
+					if (fatal === true) {
+						this.character.alive = false;
+						moveCharacter = false;
+					}
+					
+					/* Check if fluid and water */
+					if (fluid === true) {						
+						/* Sink if water */
+						if (levelObject.type == "water" && this._character.container.z <= 0) {
+							this._character.animateDown(nextSegmentDistance);
+						}
+						break;
+					} else if (levelObject.type == "fire") {
+						if (this._character.container.z <= 0) {
+							this._character.animateUp(nextSegmentDistance*2);
+						}
+					} else if (levelObject.type == "conveyor") {
+						moveCharacter = false;
+						
+						var coord:Point = this._grid.gridReferenceToWorldCoord(characterGridRef.x, characterGridRef.y);
+						switch (direction) {
+							case "up":
+								coord.y += nextSegmentDistance;
+								break;
+							case "down":
+								coord.y -= nextSegmentDistance;
+								break;
+							case "left":
+								coord.x -= nextSegmentDistance;
+								break;
+							case "right":
+								coord.x += nextSegmentDistance;
+								break;
+						}
+						
+						this._character.animateToPoint(coord.x, coord.y);
+					}
+				/* Object is on the tile in front of character */ 
+				} else if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {					
 					/* Check if finish line */
 					if (finish === true) {
 						this._completed = true;
+						this._character.animateForward(nextSegmentDistance);
 						break;
 					}
 					
-					/* Check if fluid */
-					if (fluid === true) {
-						/* Stop character and sink once */
-						moveCharacter = false;
-						if (this._character.container.z <= 0) {
-							this._character.animateDown(nextSegmentDistance);
-						}
-						this.character.alive = false;
-						break;
-					}
-				/* Object is on the tile in front of character */ 
-				} else if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {
 					/* Check if object is solid */
 					if (solid === true) {
-						/* Stop character from moving */
-						moveCharacter = false;
-						this.character.alive = false;
+						if (fatal === true) {
+							this.character.alive = false;
+							moveCharacter = false;
+						}
 						break;
 					}
 				/* Object is not on the same or next tile as character */ 
@@ -526,6 +571,10 @@ package game {
 		
 		public function set activeDirectionObjectId(id:int):void {
 			this._activeDirectionObjectId = id;
+		}
+		
+		public function get activeDirectionObjectId():int {
+			return this._activeDirectionObjectId;
 		}
 		
 		public function get character():GameCharacter {

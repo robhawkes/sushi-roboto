@@ -218,15 +218,19 @@ package {
 				if (this._board.completed) {
 					trace("You win!");
 					this._play = false;
+					
+					/* Show win scenario UI */
 				} else {				
 					/* Update board objects */
 					this._board.updateObjects();
 				}
-			} else if (!this._board.character.alive) {
+			} else if (this._play && !this._board.character.alive) {
 				trace("Character is dead");
+				this._play = false;
+				
+				/* Show lose scenario UI */
 			}
 			
-			/* Render the Papervision scene */
 			this._papervision.render();
 		}
 		
@@ -246,7 +250,7 @@ package {
 						break;
 					case _directionPatternId: // Direction marker
 						//trace("Update direction marker");
-						if (this._board.getTotalDirectionObjects() > 0 && !this._play) {
+						if (this._board.getTotalDirectionObjects() > 0 && this._board.activeDirectionObjectId >= 0 && !this._play) {
 							this._board.updateActiveDirectionObject(this._activeMarker, this.stage.stageWidth, this.stage.stageHeight);
 						}
 						break;

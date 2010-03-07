@@ -10,8 +10,11 @@ package game {
 		}
 		
 		private function _initObject():void {
+			this._type = "water";
+			
 			var attributes:Array = new Array();
 			attributes["fluid"] = true;
+			attributes["fatal"] = true;
 			
 			this._setAttributes(attributes);
 			

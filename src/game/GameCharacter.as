@@ -21,7 +21,10 @@ package game {
 		}
 		
 		public function animateToPoint(x:int, y:int, time:Number = 0.5):void {
-			Tweener.addTween(this._container, {x: x, y: y, time: time, transition: "linear"});
+			if (!this._moving) {
+				this._moving = true;
+				Tweener.addTween(this._container, {x: x, y: y, time: time, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
+			}
 		}
 		
 		public function animateForward(distance:int = 0):void {
@@ -48,6 +51,16 @@ package game {
 				this._moving = true;
 				var z:int = this._container.z;
 				z+=distance;
+				
+				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
+			}
+		}
+			
+		public function animateUp(distance:int = 0):void {
+			if (!this._moving) {
+				this._moving = true;
+				var z:int = this._container.z;
+				z-=distance;
 				
 				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
