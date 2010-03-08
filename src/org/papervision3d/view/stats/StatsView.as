@@ -19,18 +19,20 @@ package org.papervision3d.view.stats
 			polygonCount = recurseDisplayObject(obj, polygonCount);
 			return polygonCount;
 		}
-		
+				
 		protected static function recurseDisplayObject(obj:DisplayObject3D, polygonCount:Number):Number
 		{
+			var polys:Number = 0;
 			for each (var childObj:DisplayObject3D in obj.children)
 			{
-				polygonCount += recurseDisplayObject(childObj, polygonCount);
+				 polys += recurseDisplayObject(childObj, polygonCount);
 			}
 			
-			if( obj.geometry && obj.geometry.faces ) for( var i:int=0; i<obj.geometry.faces.length; i++) polygonCount++;
+			if( obj.geometry && obj.geometry.faces ){ polys += obj.geometry.faces.length;}
 			
-			return polygonCount;
+			return polys;
 		}
+		
 		
 		protected var statsFormat:TextFormat;
 		public var totalPolyCount:Number = 0;

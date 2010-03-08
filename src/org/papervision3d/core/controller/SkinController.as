@@ -26,6 +26,9 @@ package org.papervision3d.core.controller
 		/** */
 		public var vertexWeights:Array;
 		
+		/** */
+		public var input : MorphController;
+
 		/**
 		 * Constructor.
 		 * 

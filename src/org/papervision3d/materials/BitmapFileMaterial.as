@@ -436,6 +436,10 @@ package org.papervision3d.materials
 		
 		}		
 		
-		
+		override public function destroy() : void 
+		{
+			if(bitmapLoader) bitmapLoader.unload(); 	
+			super.destroy(); 
+		}
 	}
 }

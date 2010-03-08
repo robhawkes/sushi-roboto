@@ -44,11 +44,11 @@ package org.papervision3d.materials.special
 			} 
 			else if (source is DisplayObject)
 			{
-				create(source as DisplayObject, scale); 
+				create(source as DisplayObject, scale, transparent); 
 			}
 		}
 		
-		public function create(clip : DisplayObject, scale : Number = 1) : BitmapData
+		public function create(clip : DisplayObject, scale : Number = 1, transparent : Boolean = true) : BitmapData
 		{
 			var bounds : Rectangle = clip.getBounds(clip); 
 			
@@ -93,7 +93,7 @@ package org.papervision3d.materials.special
 			// TODO! Make a bitmap factory! 
 			if((!bitmap)||(bitmap.width<bitmapwidth)||(bitmap.height<bitmapheight) || (bitmap.height>>1 >= bitmapheight) || (bitmap.width>>1 >= bitmapwidth))
 			{
-				bitmap = new BitmapData(bitmapwidth, bitmapheight, true, 0x00000000);//0x55ff0000); 
+				bitmap = new BitmapData(bitmapwidth, bitmapheight, transparent, 0x00000000);//0x55ff0000); 
 			}
 			// otherwise just clear the bitmap
 			else 

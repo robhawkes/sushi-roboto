@@ -48,7 +48,6 @@ package org.papervision3d.core.utils.virtualmouse
      * @eventType flash.events.MouseEvent
      */
 	[Event(name="mouseOut", type="flash.events.MouseEvent")]
-	
     /**
      * Dispatched when the virtual mouse fires an
 	 * MouseEvent.ROLL_OUT event.
@@ -586,7 +585,7 @@ package org.papervision3d.core.utils.virtualmouse
 			originalPoint.y = container.y;
 			container.x = container.y = 0;
 			
-			var objectsUnderPoint:Array = objectsUnderPoint = container.getObjectsUnderPoint(location);;
+			var objectsUnderPoint:Array = container.getObjectsUnderPoint(location);
 			
 			container.x = originalPoint.x;
 			container.y = originalPoint.y;

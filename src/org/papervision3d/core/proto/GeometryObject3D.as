@@ -200,7 +200,7 @@
 				var tmp:Vertex3D = f.v0;
 				f.v0 = f.v2;
 				f.v2 = tmp;
-				f.uv = [f.uv2, f.uv1, f.uv0];
+				//f.uv = [f.uv2, f.uv1, f.uv0];
 				f.createNormal();
 			}
 				

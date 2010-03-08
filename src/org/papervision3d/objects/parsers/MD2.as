@@ -1,15 +1,19 @@
-package org.papervision3d.objects.parsers {
-	import flash.events.Event;
+package org.papervision3d.objects.parsers {	import org.papervision3d.Papervision3D;	
+	import flash.events.Event;
 	import flash.events.ProgressEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
-	import flash.utils.getTimer;
 	
-	import org.papervision3d.core.animation.*;
-	import org.papervision3d.core.animation.channel.*;
+	import org.papervision3d.core.animation.IAnimatable;	
+	import org.papervision3d.core.animation.IAnimationProvider;
+	import org.papervision3d.core.animation.clip.AnimationClip3D;		import org.papervision3d.core.controller.IControllerProvider;	import org.papervision3d.core.controller.IObjectController;		import org.papervision3d.core.animation.key.LinearCurveKey3D;	
+	import org.papervision3d.core.animation.curve.Curve3D;	
+	import org.papervision3d.core.animation.channel.geometry.VerticesChannel3D;	
+	import org.papervision3d.core.animation.channel.Channel3D;	
+	import org.papervision3d.core.controller.AnimationController;	
 	import org.papervision3d.core.geom.TriangleMesh3D;
 	import org.papervision3d.core.geom.renderables.*;
 	import org.papervision3d.core.log.PaperLogger;
@@ -17,7 +21,7 @@ package org.papervision3d.objects.parsers {
 	import org.papervision3d.core.proto.MaterialObject3D;
 	import org.papervision3d.core.render.data.RenderSessionData;
 	import org.papervision3d.events.FileLoadEvent;
-	import org.papervision3d.objects.DisplayObject3D;	
+	import org.papervision3d.objects.DisplayObject3D;
 
 	/**
 	 * Loads Quake 2 MD2 file with animation!
@@ -27,8 +31,18 @@ package org.papervision3d.objects.parsers {
 	 * @website www.d3s.net
 	 * @version 04.11.07:11:56
 	 */
-	public class MD2 extends TriangleMesh3D implements IAnimationDataProvider, IAnimatable
+	public class MD2 extends TriangleMesh3D implements IAnimatable, IAnimationProvider, IControllerProvider
 	{
+		/**
+		 * 
+		 */
+		protected var _animation : AnimationController;
+		
+		/**
+		 * 
+		 */
+		protected var _controllers : Array;
+		
 		/**
 		 * Variables used in the loading of the file
 		 */
@@ -54,7 +68,7 @@ package org.papervision3d.objects.parsers {
 		/**
 		 * Constructor.
 		 * 
-		 * @param	autoPlay	Whether to start the animation automatically.
+		 * @param	autoPlay	Whether to start the _animation automatically.
 		 */
 		public function MD2(autoPlay:Boolean=true):void
 		{
@@ -63,30 +77,48 @@ package org.papervision3d.objects.parsers {
 			_autoPlay = autoPlay;
 		}
 		
+		/**		 * Gets / sets the animation controller.		 * 		 * @see org.papervision3d.core.controller.AnimationController		 */		public function set animation(value : AnimationController) : void		{			_animation = value;		}		
+		public function get animation() : AnimationController
+		{
+			return _animation;
+		}
+				/**		 * Gets / sets all controlllers.		 * 		 * @return	Array of controllers.		 * 		 * @see org.papervision3d.core.controller.IObjectController		 * @see org.papervision3d.core.controller.AnimationController		 * @see org.papervision3d.core.controller.MorphController		 * @see org.papervision3d.core.controller.SkinController		 */		public function set controllers(value : Array) : void		{			_controllers = value;		}				public function get controllers() : Array		{			return _controllers;			}		
+		/**
+		 * Pauses the animation.
+		 */ 
+		public function pause():void
+		{
+			if(_animation)
+			{
+				_animation.pause();
+			}
+		}
+		
 		/**
 		 * Plays the animation.
 		 * 
-		 * @param 	clip	Optional clip name.
+		 * @param 	clip	Clip to play. Default is "all"
+		 * @param 	loop	Whether the animation should loop. Default is true.
 		 */ 
-		public function play(clip:String=null):void
+		public function play(clip:String="all", loop:Boolean=true):void
 		{
-			if(clip && _channelByName[clip])
+			if(_animation)
 			{
-				_currentChannel = _channelByName[clip];
+				_animation.play(clip, loop);
 			}
-			else if(_channels && _channels.length)
+		}
+		
+		/**
+		 * Resumes a paused animation.
+		 * 
+		 * @param loop 	Whether the animation should loop. Defaults is true.
+		 */ 
+		public function resume(loop : Boolean=true):void
+		{
+			if(_animation)
 			{
-				_currentChannel = _channels[0];
+				_animation.resume(loop);
 			}
-			else
-			{
-				_isPlaying = false;
-				PaperLogger.error("[MD2 ERROR] Can't find a animation channel to play!");
-				return;
-			}
-			
-			_currentTime = getTimer();
-			_isPlaying = true;
 		}
 		
 		/**
@@ -94,58 +126,20 @@ package org.papervision3d.objects.parsers {
 		 */ 
 		public function stop():void
 		{
-			_isPlaying = false;
-		}
-		
-		/**
-		 * Gets the default FPS.
-		 */ 
-		public function get fps():uint
-		{
-			return _fps;
-		}
-		
-		/**
-		 * Gets a animation channel by its name.
-		 * 
-		 * @param	name
-		 * 
-		 * @return the found channel.
-		 */ 
-		public function getAnimationChannelByName(name:String):AbstractChannel3D
-		{
-			return _channelByName[name];	
-		}
-		
-		/**
-		 * Gets all animation channels for a target. NOTE: when target is null, 'this' object is used.
-		 * 
-		 * @param	target	The target to get the channels for.
-		 * 
-		 * @return	Array of AnimationChannel3D.
-		 */ 
-		public function getAnimationChannels(target:DisplayObject3D=null):Array
-		{
-			target = target || this;
-			if(target === this)
+			if(_animation)
 			{
-				return _channels;
+				_animation.stop();
 			}
-			return null;
 		}
 		
 		/**
-		 * Gets animation channels by clip name.
+		 * Whether the animation is playing. This property is read-only.
 		 * 
-		 * @param	name	The clip name
-		 * 
-		 * @return	Array of AnimationChannel3D.
-		 */ 
-		public function getAnimationChannelsByClip(name:String):Array
+		 * @return True when playing.
+		 */
+		public function get playing() : Boolean
 		{
-			if(_channelByName[name])
-				return [_channelByName[name]];
-			return null;	
+			return _animation ? _animation.playing : false;
 		}
 		
 		/**
@@ -198,23 +192,12 @@ package org.papervision3d.objects.parsers {
 		 */ 
 		public override function project(parent:DisplayObject3D, renderSessionData:RenderSessionData):Number
 		{
-			if(_isPlaying && _currentChannel)
-			{
-				var secs:Number = _currentTime / 1000;
-				var duration:Number = _currentChannel.duration;
-				var elapsed:Number = (getTimer()/1000) - secs;
-				
-				if(elapsed > duration)
+			// update controllers			if(_controllers)			{
+				for each(var controller:IObjectController in _controllers)
 				{
-					_currentTime = getTimer();
-					secs = _currentTime / 1000;
-					elapsed = 0;
+					controller.update();
 				}
-				var time:Number = elapsed / duration;
-				
-				_currentChannel.updateToTime(time);
-			}
-			
+			}			
 			return super.project(parent, renderSessionData);
 		}
 		
@@ -227,12 +210,15 @@ package org.papervision3d.objects.parsers {
 		 */
 		protected function parse(data:ByteArray):void
 		{
-			var i:int, j:int, uvs:Array = new Array();
+			var i:int, uvs:Array = new Array();
 			var metaface:Object;
-			data.endian = Endian.LITTLE_ENDIAN;
 			
-			_channels = new Array();
-			_channelByName = new Object();
+			_animation = new AnimationController();
+			
+			_controllers = new Array();
+			_controllers.push(this._animation);
+			
+			data.endian = Endian.LITTLE_ENDIAN;
 			
 			// Read the header and make sure it is valid MD2 file
 			readMd2Header(data);
@@ -254,7 +240,7 @@ package org.papervision3d.objects.parsers {
 				uvs.push(uv);
 			}
 
-			//---Frame animation data
+			//---Frame _animation data
 			data.position = offset_frames;
 			readFrames(data);
 			
@@ -266,13 +252,13 @@ package org.papervision3d.objects.parsers {
 				metaface = {a: data.readUnsignedShort(), b: data.readUnsignedShort(), c: data.readUnsignedShort(),
 					        ta: data.readUnsignedShort(), tb: data.readUnsignedShort(), tc: data.readUnsignedShort()};
 				
-				var v0:Vertex3D = geometry.vertices[metaface.a];
-				var v1:Vertex3D = geometry.vertices[metaface.b];
-				var v2:Vertex3D = geometry.vertices[metaface.c];
+				var v0:Vertex3D = geometry.vertices[metaface["a"]];
+				var v1:Vertex3D = geometry.vertices[metaface["b"]];
+				var v2:Vertex3D = geometry.vertices[metaface["c"]];
 				
-				var uv0:NumberUV = uvs[metaface.ta];
-				var uv1:NumberUV = uvs[metaface.tb];
-				var uv2:NumberUV = uvs[metaface.tc];
+				var uv0:NumberUV = uvs[metaface["ta"]];
+				var uv1:NumberUV = uvs[metaface["tb"]];
+				var uv2:NumberUV = uvs[metaface["tc"]];
 
 				geometry.faces.push(new Triangle3D(this, [v2, v1, v0], material, [uv2, uv1, uv0]));
 			}
@@ -289,7 +275,9 @@ package org.papervision3d.objects.parsers {
 			dispatchEvent(new FileLoadEvent(FileLoadEvent.ANIMATIONS_COMPLETE, this.file));
 			
 			if(_autoPlay)
-				play();
+			{
+				this._animation.play();
+			}
 		}
 		
 		/**
@@ -299,16 +287,12 @@ package org.papervision3d.objects.parsers {
 		{
 			var sx:Number, sy:Number, sz:Number;
 			var tx:Number, ty:Number, tz:Number;
-			var verts:Array;
 			var i:int, j:int, char:int;
 			var duration:Number = 1 / _fps;
 			
-			var channel:AbstractChannel3D = new MorphChannel3D(this, "all");
-			
-			var t:uint = 0;
-			
+			var curves : Array = new Array(num_vertices);
 			var curName:String = "all";
-			var clip:AbstractChannel3D;
+			var clip : AnimationClip3D;
 			var clipPos:int = 0;
 			
 			for (i = 0; i < num_frames; i++)
@@ -333,16 +317,14 @@ package org.papervision3d.objects.parsers {
 				{
 					if(clip)
 					{
-						_channels.push(clip);
-						_channelByName[clip.name] = clip;
+						clip.endTime = (i-1) * duration;
+						this._animation.addClip(clip);
 					}
 					
-					clip = new MorphChannel3D(this, shortName);
+					clip = new AnimationClip3D(shortName, i * duration);
 					curName = shortName;
 					clipPos = 0;
 				}
-				
-				var vertices:Array = new Array();
 
 				// Note, the extra data.position++ in the for loop is there 
 				// to skip over a byte that holds the "vertex normal index"
@@ -353,35 +335,50 @@ package org.papervision3d.objects.parsers {
 						((sy * data.readUnsignedByte()) + ty) * loadScale,
 						((sz * data.readUnsignedByte()) + tz) * loadScale);
 					
-					v.x = -v.x;
-						
+					v.x = Papervision3D .useRIGHTHANDED  ? v.x : - v.x;
+					
+					if(!curves[j])
+					{
+						curves[j] = new Array(3);	
+						curves[j][0] = new Curve3D();
+						curves[j][1] = new Curve3D();
+						curves[j][2] = new Curve3D();
+					}
+					
+					curves[j][0].addKey(new LinearCurveKey3D(i * duration, v.x));
+					curves[j][1].addKey(new LinearCurveKey3D(i * duration, v.y));
+					curves[j][2].addKey(new LinearCurveKey3D(i * duration, v.z));
+					
 					if( i == 1 )
 					{
 						this.geometry.vertices[j].x = v.x;
 						this.geometry.vertices[j].y = v.y;
 						this.geometry.vertices[j].z = v.z;
 					}
-					
-					vertices.push(v);
 				}
-				
-				clip.addKeyFrame(new AnimationKeyFrame3D(frameName, clipPos * duration, vertices));
-				
-				channel.addKeyFrame(new AnimationKeyFrame3D(frameName, i * duration, vertices));
 				
 				clipPos++;
 			}
+
+			var channel : VerticesChannel3D = new VerticesChannel3D(this.geometry);
 			
-			_channels.unshift(channel);
-			_channelByName[channel.name] = channel;
+			for(i = 0; i < num_vertices; i++)
+			{
+				var update : Boolean = (i == num_vertices - 1);
+				
+				channel.addCurve(curves[i][0], update);	
+				channel.addCurve(curves[i][1], update);
+				channel.addCurve(curves[i][2], update);
+			}
 			
+			_animation.addChannel(channel);
 			if(clip)
 			{
-				_channels.push(clip);
-				_channelByName[clip.name] = clip;
+				clip.endTime = _animation.endTime;
+				_animation.addClip(clip);
 			}
 		}
-		
+
 		/**
 		 * Reads in all that MD2 Header data that is declared as private variables.
 		 * I know its a lot, and it looks ugly, but only way to do it in Flash
@@ -426,12 +423,5 @@ package org.papervision3d.objects.parsers {
 		{
 			dispatchEvent(event);
 		}
-		
-		protected var _channels:Array;
-		protected var _channelByName:Object;
-		
-		protected var _isPlaying:Boolean = false;
-		protected var _currentChannel:AbstractChannel3D;
-		protected var _currentTime:Number = 0;
 	}
 }

@@ -7,6 +7,7 @@ package org.papervision3d.core.proto
 	import org.papervision3d.core.log.PaperLogger;
 	import org.papervision3d.core.math.Matrix3D;
 	import org.papervision3d.core.math.Number3D;
+	import org.papervision3d.core.math.util.GLU;
 	import org.papervision3d.core.render.data.RenderSessionData;
 	import org.papervision3d.objects.DisplayObject3D;
 	
@@ -229,14 +230,64 @@ package org.papervision3d.core.proto
 		 * @param	mX
 		 * @param	mY
 		 */ 
-		public function unproject(mX:Number, mY:Number):Number3D
+		public function unproject(mX:Number, mY:Number, mZ:Number=0):Number3D
 		{	
-			var persp:Number = (focus*zoom) / (focus);
+			var vector : Number3D;
 			
-			var vector:Number3D = new Number3D(mX/persp, -mY/persp, focus);
-
-			Matrix3D.multiplyVector3x3(transform, vector);
-			
+			if(_useProjectionMatrix)
+			{
+				if(!viewport)
+				{
+					return null;
+				}
+				
+				var m : Matrix3D = this.transform;
+				var vp : Array = [
+					-viewport.width/2,
+					-viewport.height/2,
+					viewport.width,
+					viewport.height
+				];
+				
+				// need transposed transform for GLU
+				var world : Array = [
+					m.n11, m.n21, m.n31, m.n41,
+					m.n12, m.n22, m.n32, m.n42,
+					m.n13, m.n23, m.n33, m.n43,
+					m.n14, m.n24, m.n34, m.n44
+				];
+				var projection :Array = new Array(16);
+				var out :Array = new Array(4);
+				 
+				GLU.invertMatrix(world, world);
+				if(_ortho)
+				{
+					var scale : Array = new Array(16);
+					var tmp : Array = new Array(16);
+					
+					GLU.ortho(tmp, viewport.width/2, -viewport.width/2, -viewport.height/2, viewport.height/2, far, near);
+					GLU.scale(scale, _orthoScale, _orthoScale, 1);
+					GLU.multMatrices(scale, tmp, projection);
+				}
+				else
+				{
+					GLU.perspective(projection, fov, viewport.width/viewport.height, -near, -far);
+				}
+				GLU.unProject(-mX, mY, mZ, world, projection, vp, out);
+				
+				vector = new Number3D();
+				vector.x = out[0];
+				vector.y = out[1];
+				vector.z = out[2];
+			}
+			else
+			{
+				var persp:Number = (focus*zoom) / (focus);
+				
+				vector = new Number3D(mX/persp, (yUP?-mY:mY)/persp, focus);
+	
+				Matrix3D.multiplyVector3x3(transform, vector);
+			}
 			return vector;
 		}
 		

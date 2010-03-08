@@ -23,7 +23,7 @@
 		*
 		* @param	asset				A BitmapData object.
 		*/
-		public function WireframeMaterial( color:Number=0xFF00FF, alpha:Number=100, thickness:Number = 0 )
+		public function WireframeMaterial( color:Number=0xFF00FF, alpha:Number=1, thickness:Number = 0 )
 		{
 			this.lineColor     = color;
 			this.lineAlpha     = alpha;

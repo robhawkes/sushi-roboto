@@ -1,7 +1,6 @@
 ﻿package org.papervision3d.cameras
 {
 	import flash.geom.Rectangle;
-	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import org.papervision3d.core.culling.FrustumCuller;
@@ -259,13 +258,14 @@
 				
 				screen = vertex.vertex3DInstance;
 				
+				
 				if(_useProjectionMatrix)
 				{
 					s_w = vx * m41 + vy * m42 + vz * m43 + view.n44;
 					// to normalized clip space (0.0 to 1.0)
 					// NOTE: can skip and simply test (s_z < 0) and save a div
 					s_z /= s_w;
-					
+
 					// is point between near- and far-plane?
 					if( screen.visible = (s_z > 0 && s_z < 1) )
 					{
@@ -276,7 +276,7 @@
 						// project to viewport.
 						screen.x = s_x * vpw;
 						screen.y = s_y * vph;
-						
+
 						// NOTE: z not linear, value increases when nearing far-plane.
 						screen.z = s_z * s_w;
 					}
@@ -327,10 +327,8 @@
 				else
 					this.useProjectionMatrix = _prevOrthoProjection;
 			}
-			else if(_prevUseProjection != _useProjectionMatrix)
-			{
-				this.useProjectionMatrix = this._useProjectionMatrix;
-			}	
+			
+			this.useProjectionMatrix = this._useProjectionMatrix;	
 			
 			_prevOrtho = this.ortho;
 			_prevUseProjection = _useProjectionMatrix;
@@ -524,6 +522,8 @@
 				0, 0, 1, 0 
 			] );
 		}
+		
+		public function get projection():Matrix3D { return _projection; }
 		
 		protected var _projection				: Matrix3D;
 		protected var _prevFocus				: Number;

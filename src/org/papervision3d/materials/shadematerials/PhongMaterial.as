@@ -10,7 +10,7 @@ package org.papervision3d.materials.shadematerials
 	{
 		public function PhongMaterial(light:LightObject3D, lightColor:uint, ambientColor:uint, specularLevel:uint)
 		{
-			super(light, LightMaps.getPhongMap(lightColor, ambientColor, specularLevel));
+			super(light, LightMaps.getPhongMap(lightColor, ambientColor, specularLevel), null, ambientColor);
 		}
 		
 	}

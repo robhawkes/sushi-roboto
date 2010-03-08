@@ -44,7 +44,11 @@ package org.papervision3d.materials.utils
 			_lightDir.reset();
 			_lightUp.reset();
 			_lightSide.reset();
-				
+			
+			if(!object)
+			{
+				return lightMatrix;
+			}
 			// NOTE: we basically perform a lookAt.
 			var ml:Matrix3D = light.transform;
 			var mo:Matrix3D = object.world;

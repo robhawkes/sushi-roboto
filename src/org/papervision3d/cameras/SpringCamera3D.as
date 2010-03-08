@@ -93,6 +93,8 @@ package org.papervision3d.cameras
 
 		public override function transformView(transform:Matrix3D = null):void
 		{
+			super.transformView(transform);
+			
 			if(_camTarget != null)
 			{
 				_targetTransform.n31 = _camTarget.transform.n31;
@@ -165,7 +167,7 @@ package org.papervision3d.cameras
 				if(Math.abs(_zrot) > 0) this.rotationZ = _zrot;
 			}  
         
-			super.transformView(transform);
+			
 		}
 	}
 }

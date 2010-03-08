@@ -45,7 +45,11 @@ package org.papervision3d.materials.shadematerials
 			super();
 			this.light = light;
 			this.lightMap = lightMap;
-			this.backenvmap = backEnvMap;
+			if(!backenvmap){
+				this.backenvmap = new BitmapData(1,1,false, ambientColor);
+			}else{
+				this.backenvmap = backenvmap;
+			}
 		}
 		
 		/**
@@ -105,7 +109,7 @@ package org.papervision3d.materials.shadematerials
 			}else{
 				useMap = backenvmap;
 			}
-			graphics.beginBitmapFill( _lightMap, transformMatrix, false, false);
+			graphics.beginBitmapFill( useMap, transformMatrix, false, false);
 		    graphics.moveTo( x0, y0 );
 			graphics.lineTo( x1, y1 );
 			graphics.lineTo( x2, y2 );

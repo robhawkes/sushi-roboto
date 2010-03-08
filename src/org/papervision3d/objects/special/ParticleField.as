@@ -10,11 +10,11 @@ package org.papervision3d.objects.special {
 	public class ParticleField extends Particles
 	{
 		
-		private var fieldDepth:Number;
-		private var fieldHeight:Number;
-		private var fieldWidth:Number;
-		private var quantity:int;		
-		private var color:int;
+		protected var fieldDepth:Number;
+		protected var fieldHeight:Number;
+		protected var fieldWidth:Number;
+		protected var quantity:int;		
+		protected var color:int;
 		
 		/**
 		* The ParticleField class creates an object with an amount of particles randomly distributed over a specied 3d area.
@@ -39,7 +39,7 @@ package org.papervision3d.objects.special {
 			createParticles(particleSize);
 		}
 		
-		private function createParticles(size:Number):void
+		protected function createParticles(size:Number):void
 		{
 			var width2  :Number = fieldWidth /2;
 			var height2 :Number = fieldHeight /2;

@@ -38,6 +38,7 @@ package org.papervision3d.core.utils
 		public function updatePosition( rhd:RenderHitData ):void
 		{			
 			var face3d:Triangle3D = rhd.renderable as Triangle3D;
+			var look:Matrix3D;
 			
 			target.x = face3d.faceNormal.x; 
 			target.y = face3d.faceNormal.y; 
@@ -54,7 +55,7 @@ package org.papervision3d.core.utils
 				var yAxis:Number3D = Number3D.cross(zAxis, xAxis);
 				yAxis.normalize();
 				
-				var look:Matrix3D = this.transform;
+				look = this.transform;
 					
 				look.n11 = xAxis.x;
 				look.n21 = xAxis.y;
@@ -67,9 +68,10 @@ package org.papervision3d.core.utils
 				look.n13 = zAxis.x;
 				look.n23 = zAxis.y;
 				look.n33 = zAxis.z;
+			}else{
+				look = Matrix3D.IDENTITY;
 			}
 			
-			var m:Matrix3D = Matrix3D.IDENTITY;
 			this.transform = Matrix3D.multiply(face3d.instance.world, look);
 			
 			x = rhd.x;

@@ -10,7 +10,7 @@ package org.papervision3d.materials.shadematerials
 	{
 		public function CellMaterial(light:LightObject3D, color_1:int, color_2:int, steps:int)
 		{
-			super(light, LightMaps.getCellMap(color_1, color_2, steps));
+			super(light, LightMaps.getCellMap(color_1, color_2, steps), null, color_2);
 		}
 		
 	}

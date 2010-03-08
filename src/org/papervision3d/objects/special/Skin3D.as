@@ -25,5 +25,25 @@ package org.papervision3d.objects.special
 			
 			return super.project(parent, renderSessionData);
 		}
+
+		public override function clone():DisplayObject3D
+		{
+			var object:DisplayObject3D = super.clone();
+			var mesh:Skin3D = new Skin3D(this.material, [], [], object.name);
+			
+			if(this.materials)
+			{
+				mesh.materials = this.materials.clone();
+			}
+				
+			if(object.geometry)
+			{
+				mesh.geometry = object.geometry.clone(mesh);
+			}
+				
+			mesh.copyTransform(this);
+			
+			return mesh;
+		}
 	}
 }

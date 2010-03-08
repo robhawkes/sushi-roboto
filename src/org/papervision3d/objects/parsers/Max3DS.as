@@ -118,8 +118,16 @@ package org.papervision3d.objects.parsers
 			for(i = 0; i < meshData.materials.length; i++)
 			{
 				var mat:MaterialData = meshData.materials[i];
-				var material:MaterialObject3D = this.materials.getMaterialByName(mat.name) || MaterialObject3D.DEFAULT;
+				var material:MaterialObject3D = this.materials.getMaterialByName(mat.name);
 				
+				// http://code.google.com/p/papervision3d/issues/detail?id=208
+				// fix proposed by Andy Watt.
+				if(!material)
+				{
+					material = MaterialObject3D.DEFAULT;
+					this.materials.addMaterial(material, mat.name);
+				}
+
 				for(var j:int = 0; j < mat.faces.length; j++)
 				{
 					var faceIdx:int = mat.faces[j];

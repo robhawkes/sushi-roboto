@@ -73,9 +73,9 @@ package org.papervision3d.materials.special
 		public function updateParticleBitmap(scale : Number = 1, posX : Number=0, posY : Number=0) : void
 		{
 			if(particleBitmap)				
-				particleBitmap.create(movie, scale);
+				particleBitmap.create(movie, scale, movieTransparent);
 			else
-				particleBitmap = new ParticleBitmap(movie, scale);
+				particleBitmap = new ParticleBitmap(movie, scale, false, movieTransparent);
 			
 		}
 		

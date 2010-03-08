@@ -128,7 +128,7 @@ package org.papervision3d.objects.parsers {
 								
 								material.tiled = true;
 								
-								this.materials.addMaterial(material, String(mat.@name));
+								this.materials.addMaterial(material, String(mat.@id));
 							}
 						}
 					} catch(e:Error) {
