@@ -32,7 +32,7 @@ package game {
 			var containerMaterial:ColorMaterial = new ColorMaterial(0xFFFFFF, 0, true);
 			this._container = new Plane(containerMaterial, this._width, this._height, 4, 4);
 			
-			var material:BitmapFileMaterial = new BitmapFileMaterial("resources/Grid-Texture.png");
+			var material:BitmapFileMaterial = new BitmapFileMaterial("resources/textures/grid/grid.png");
 			material.baked = true;
 			material.smooth = true;
 			material.precise = true;

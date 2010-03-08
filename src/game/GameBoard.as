@@ -8,21 +8,24 @@ package game {
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
 	
+	import org.papervision3d.core.effects.BitmapFireEffect;
 	import org.papervision3d.core.math.Matrix3D;
 	import org.papervision3d.core.math.Number3D;
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.events.InteractiveScene3DEvent;
 	import org.papervision3d.materials.BitmapFileMaterial;
+	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.DisplayObject3D;
 	import org.papervision3d.objects.parsers.Collada;
-	import org.papervision3d.objects.parsers.DAE;
+	import org.papervision3d.view.layer.BitmapEffectLayer;
 	import org.papervision3d.view.layer.ViewportLayer;
 	import org.papervision3d.view.layer.util.ViewportLayerSortMode;
 
 	public class GameBoard {
 		private var _activeDirectionObjectId:int = -1;
 		private var _activePlayerObjectId:int = -1;
+		private var _bfx:BitmapEffectLayer;
 		private var _boardViewportLayer:ViewportLayer;
 		private var _character:GameCharacter;
 		private var _completed:Boolean;
@@ -89,6 +92,18 @@ package game {
 				
 				/* Enable double click mouse events */
 				this._objectViewportLayer.doubleClickEnabled = true;
+				
+				/* Testing something */		
+				//var papervision:GamePapervision = this._registry.getEntry("papervision");
+				this._bfx = new BitmapEffectLayer(papervision.viewport, 800, 600);
+				var fire:BitmapFireEffect = new BitmapFireEffect();
+				fire.fadeRate = 0.1;
+				fire.flameSpread = 1;
+				fire.flameHeight = 0.5;
+				fire.distortion = 0.5;
+				fire.distortionScale = 1;
+				this._bfx.addEffect(fire);
+				papervision.viewport.containerSprite.addLayer(this._bfx);
 			}
 		}
 		
@@ -113,6 +128,18 @@ package game {
 			plates.rotationX = -90;
 			this._container.addChild(plates);
 			this._boardViewportLayer.addDisplayObject3D(plates, true);
+			
+			var noodlesMaterial1:BitmapFileMaterial = new BitmapFileMaterial("resources/objects/noodles/Extrude_NURBSSurface_Color.jpg");
+			var noodlesMaterials:MaterialsList = new MaterialsList({Material1: noodlesMaterial1});
+			var noodles:Collada = new Collada("resources/objects/noodles/noodle.dae", noodlesMaterials);
+			noodles.scale = 0.002;
+			coord = this.grid.gridReferenceToWorldCoord(0, 1);
+			noodles.x = coord.x;
+			noodles.y = coord.y;
+			//noodles.rotationZ = 180;
+			noodles.rotationX = -90;
+			this._container.addChild(noodles);
+			this._boardViewportLayer.addDisplayObject3D(noodles, true);
 		}
 		
 		private function _addCharacter():void {
@@ -134,7 +161,10 @@ package game {
 						levelObject = new GameLevelFinishObject();
 						break;
 					case "fire":
-						levelObject = new GameLevelFireObject();
+						levelObject = new GameLevelFireObject();	
+						break;
+					case "start":
+						levelObject = new GameLevelStartObject();
 						break;
 					case "wall":
 						levelObject = new GameLevelWallObject();
@@ -164,6 +194,11 @@ package game {
 					
 					this._levelObjects.push(levelObject);
 					this._container.addChild(levelObject);
+					
+					//this._bfx.addEffect(new BitmapLayerEffect(new DropShadowFilter(25, 90, 0, 0.25, 8, 8, 0.5, 1)));
+					if (levelObjectItem.type == "fire") {
+						this._bfx.addDisplayObject3D(levelObject, true);
+					}
 				}
 			}
 		}

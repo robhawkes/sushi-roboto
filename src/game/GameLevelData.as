@@ -22,7 +22,8 @@ package game {
 			this._columns = 6;
 			
 			this._levelObjects = new Array();
-			this._levelObjects.push({type: "conveyor", position: new Point(3, 2)},
+			this._levelObjects.push({type: "start", position: new Point(1, 0)},
+									{type: "conveyor", position: new Point(3, 2)},
 									{type: "conveyor", position: new Point(3, 3)},
 									{type: "wall", position: new Point(1, 3)},
 									{type: "wall", position: new Point(2, 3)},

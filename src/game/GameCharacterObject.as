@@ -15,8 +15,9 @@ package game {
 			/*var material1:BitmapFileMaterial = new BitmapFileMaterial("resources/texture.jpg");
 			var material2:BitmapFileMaterial = new BitmapFileMaterial("resources/texture2.jpg");
 			var objectMaterials:MaterialsList = new MaterialsList({Material1: material1, Material2: material2});
-			var object:Collada = new Collada("resources/robot.dae", objectMaterials);
-			object.scale = 0.001;
+			var object:DAE = new DAE(true, "", true);
+			object.load("resources/robot.dae", objectMaterials);
+			object.scale = 0.1;
 			object.rotationZ = 180;
 			object.rotationX = -90;*/
 			

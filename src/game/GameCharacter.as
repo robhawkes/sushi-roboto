@@ -20,7 +20,7 @@ package game {
 			this._container.y = y;
 		}
 		
-		public function animateToPoint(x:int, y:int, time:Number = 0.5):void {
+		public function animateToPoint(x:int, y:int, time:Number = 1):void {
 			if (!this._moving) {
 				this._moving = true;
 				Tweener.addTween(this._container, {x: x, y: y, time: time, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
@@ -42,7 +42,7 @@ package game {
 				} else if (this._container.rotationZ === -90) { // Right
 					x+=distance;
 				}
-				Tweener.addTween(this._container, {x: x, y: y, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
+				Tweener.addTween(this._container, {x: x, y: y, time: 1, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
 		}
 			
@@ -52,7 +52,7 @@ package game {
 				var z:int = this._container.z;
 				z+=distance;
 				
-				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
+				Tweener.addTween(this._container, {z: z, time: 1, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
 		}
 			
@@ -62,7 +62,7 @@ package game {
 				var z:int = this._container.z;
 				z-=distance;
 				
-				Tweener.addTween(this._container, {z: z, time: 0.5, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
+				Tweener.addTween(this._container, {z: z, time: 1, transition: "linear", onCompleteScope: this, onComplete: function():void { this._moving = false; }});
 			}
 		}
 			
