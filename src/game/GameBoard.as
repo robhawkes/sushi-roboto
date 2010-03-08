@@ -12,7 +12,11 @@ package game {
 	import org.papervision3d.core.math.Number3D;
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.events.InteractiveScene3DEvent;
+	import org.papervision3d.materials.BitmapFileMaterial;
+	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.DisplayObject3D;
+	import org.papervision3d.objects.parsers.Collada;
+	import org.papervision3d.objects.parsers.DAE;
 	import org.papervision3d.view.layer.ViewportLayer;
 	import org.papervision3d.view.layer.util.ViewportLayerSortMode;
 
@@ -97,6 +101,18 @@ package game {
 			
 			/* Add level objects to board */
 			this._addLevelObjects();
+			
+			/* Add board environment */
+			var platesMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/plates/Lathe_NURBS.4Ambient_Occlusion.jpg")});
+			var plates:Collada = new Collada("resources/objects/plates/plates.dae", platesMaterials);
+			plates.scale = 0.004;
+			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
+			plates.x = coord.x;
+			plates.y = coord.y;
+			plates.rotationZ = 180;
+			plates.rotationX = -90;
+			this._container.addChild(plates);
+			this._boardViewportLayer.addDisplayObject3D(plates, true);
 		}
 		
 		private function _addCharacter():void {
