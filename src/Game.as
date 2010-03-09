@@ -172,14 +172,14 @@ package {
 					break;
 				case _objectPatternId: // Player object marker
 					trace("Added player object marker");
-					var selectedItemName:String = this._inventory.getSelectedItem();
+					/*var selectedItemName:String = this._inventory.getSelectedItem();
 					if (selectedItemName) {
 						if (this._board.objectsRemainingByType(selectedItemName) > 0) {
 							this._board.addDebugObject();
 						} else {
 							trace("No more "+selectedItemName+" objects left in invetory")
 						}
-					}
+					}*/
 					break;
 				case _directionPatternId: // Direction marker
 					trace("Added direction marker");
@@ -260,6 +260,7 @@ package {
 		
 		/* Keyboard listeners */
 		private function _onKeyDown(e:KeyboardEvent):void {
+			trace(e.keyCode);
 			switch (e.keyCode) {
 				case 32: // Spacebar
 					if (!this._play) {
@@ -297,6 +298,14 @@ package {
 					if (papervision) {
 						this._play = false;
 						this._board.resetBoard();
+					}
+					break;
+				case 87: // w
+					/* Add new water object */
+					if (this._board.objectsRemainingByType("water") > 0) {
+						this._board.addPlayerWaterObject();
+					} else {
+						trace("No more directional objects left in invetory")
 					}
 					break;
 			}

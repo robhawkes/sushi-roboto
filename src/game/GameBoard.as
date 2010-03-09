@@ -24,6 +24,7 @@ package game {
 
 	public class GameBoard {
 		private var _activeDirectionObjectId:int = -1;
+		private var _activeLevelObjectId:int = -1;
 		private var _activePlayerObjectId:int = -1;
 		private var _bfx:BitmapEffectLayer;
 		private var _boardViewportLayer:ViewportLayer;
@@ -37,7 +38,7 @@ package game {
 		private var _levelObjects:Vector.<GameLevelObject>;
 		private var _objectsInUseByType:Array;
 		private var _objectViewportLayer:ViewportLayer;
-		private var _playerObjects:Vector.<GameDebugObject>;
+		private var _playerObjects:Vector.<GamePlayerObject>;
 		private var _registry:GameRegistry; 
 		
 		public function GameBoard() {
@@ -54,7 +55,7 @@ package game {
 			
 			this._levelObjects = new Vector.<GameLevelObject>();
 			this._directionObjects = new Vector.<GameDirectionObject>();
-			this._playerObjects = new Vector.<GameDebugObject>();
+			this._playerObjects = new Vector.<GamePlayerObject>();
 			
 			this._objectsInUseByType = new Array();
 			
@@ -94,7 +95,6 @@ package game {
 				this._objectViewportLayer.doubleClickEnabled = true;
 				
 				/* Testing something */		
-				//var papervision:GamePapervision = this._registry.getEntry("papervision");
 				this._bfx = new BitmapEffectLayer(papervision.viewport, 800, 600);
 				var fire:BitmapFireEffect = new BitmapFireEffect();
 				fire.fadeRate = 0.1;
@@ -118,7 +118,7 @@ package game {
 			this._addLevelObjects();
 			
 			/* Add board environment */
-			var platesMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/plates/Lathe_NURBS.4Ambient_Occlusion.jpg")});
+			/*var platesMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/plates/Lathe_NURBS.4Ambient_Occlusion.jpg")});
 			var plates:Collada = new Collada("resources/objects/plates/plates.dae", platesMaterials);
 			plates.scale = 0.004;
 			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
@@ -127,9 +127,9 @@ package game {
 			plates.rotationZ = 180;
 			plates.rotationX = -90;
 			this._container.addChild(plates);
-			this._boardViewportLayer.addDisplayObject3D(plates, true);
+			this._boardViewportLayer.addDisplayObject3D(plates, true);*/
 			
-			var noodlesMaterial1:BitmapFileMaterial = new BitmapFileMaterial("resources/objects/noodles/Extrude_NURBSSurface_Color.jpg");
+			/*var noodlesMaterial1:BitmapFileMaterial = new BitmapFileMaterial("resources/objects/noodles/Extrude_NURBSSurface_Color.jpg");
 			var noodlesMaterials:MaterialsList = new MaterialsList({Material1: noodlesMaterial1});
 			var noodles:Collada = new Collada("resources/objects/noodles/noodle.dae", noodlesMaterials);
 			noodles.scale = 0.002;
@@ -139,7 +139,18 @@ package game {
 			//noodles.rotationZ = 180;
 			noodles.rotationX = -90;
 			this._container.addChild(noodles);
-			this._boardViewportLayer.addDisplayObject3D(noodles, true);
+			this._boardViewportLayer.addDisplayObject3D(noodles, true);*/
+			
+			/*var wokMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/wok/Connect_ObjectSurface_Color.jpg")});
+			var wok:Collada = new Collada("resources/objects/wok/wok.dae", wokMaterials);
+			wok.scale = 0.001;
+			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
+			wok.x = coord.x;
+			wok.y = coord.y;
+			wok.rotationZ = 180;
+			wok.rotationX = -90;
+			this._container.addChild(wok);
+			this._boardViewportLayer.addDisplayObject3D(wok, true);*/
 		}
 		
 		private function _addCharacter():void {
@@ -261,15 +272,16 @@ package game {
 			this._container.removeChild(object);
 		}
 		
-		public function addDebugObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
-			if (this._levelData.getObjectInventory("debug") > 0) {
-				var object:GameDebugObject = new GameDebugObject();
+		public function addPlayerWaterObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
+			if (this._levelData.getObjectInventory("water") > 0) {
+				var object:GamePlayerWaterObject = new GamePlayerWaterObject();
 				object.x = x;
 				object.y = y;
 				object.rotationX = rotationX;
 				object.rotationY = rotationY;
 				object.rotationZ = rotationZ;
 				
+				/* Add object to objects viewport layer */
 				this._objectViewportLayer.addDisplayObject3D(object, true);
 				
 				/* Add object to list and set _activeObjectId to object position in list */
@@ -282,10 +294,10 @@ package game {
 					this._objectsInUseByType[object.type] = 1;
 				}
 				
-				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickPlayerObject);
-				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
-				
+				this._playerObjects.push(object);
 				this._container.addChild(object);
+			} else {
+				trace("No water objects left");
 			}
 		}
 		
@@ -395,6 +407,30 @@ package game {
 			}
 		}
 		
+		public function updateActiveLevelObject(marker:FLARMarker, stageWidth:int = 0, stageHeight:int = 0):void {
+			var papervision:GamePapervision = this._registry.getEntry("papervision");
+			var map:GameMap = this._registry.getEntry("gameMap");
+			
+			var rhd:RenderHitData = papervision.viewport.hitTestPointObject(new Point(marker.centerpoint.x-(stageWidth/2), marker.centerpoint.y-(stageHeight/2)), this._grid.container);
+			if (rhd.hasHit) {
+				var u:Number = rhd.u;
+				var v:Number = rhd.v;
+				
+				/* Reverse V to take reversed Y coordinates into concideration */ 
+				var gridRef:Point = this._grid.coordToGridReference(u*this._grid.width, (v*-1+1)*this._grid.height);
+				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
+				
+				this._levelObjects[this._activeLevelObjectId].x = coord.x;
+				this._levelObjects[this._activeLevelObjectId].y = coord.y;
+				
+				if (map)
+					map.updateMarker(Math.round(u*100)/100, Math.round((v*-1+1)*100)/100);
+			} else {
+				if (map)
+					map.removeMarker();
+			}
+		}
+		
 		public function updateActivePlayerObject(marker:FLARMarker, stageWidth:int = 0, stageHeight:int = 0):void {
 			var papervision:GamePapervision = this._registry.getEntry("papervision");
 			var map:GameMap = this._registry.getEntry("gameMap");
@@ -421,6 +457,7 @@ package game {
 		
 		public function updateObjects():void {
 			this._updateLevelObjects();
+			this._updatePlayerObjects();
 			
 			/* Only update if character isn't moving */
 			if (!this.character.moving)
@@ -436,6 +473,18 @@ package game {
 			while (i--) {
 				/* Basic object checks and updates */
 				object = this._levelObjects[i];
+			}
+		}
+		
+		private function _updatePlayerObjects():void {
+			/* Store reference to amount of objects on board */
+			var i:int = this._playerObjects.length;
+			var object:GamePlayerObject;
+			
+			/* Loop through all objects */
+			while (i--) {
+				/* Basic object checks and updates */
+				object = this._playerObjects[i];
 			}
 		}
 		
@@ -468,12 +517,9 @@ package game {
 				/* Object is in the same segment as character */
 				if (directionObjectDistanceSegmentsY === 0 && directionObjectDistanceSegmentsX === 0) {
 					this._character.container.rotationZ = directionObject.rotationZ;
+					break;
 				}
 			}
-			
-			/* Store reference to amount of level objects on board */
-			var levelIndex:int = this._levelObjects.length;
-			var levelObject:GameLevelObject;
 			
 			/* Reference to current character rotation and position */
 			var rotation:int = this._character.container.rotationZ;
@@ -505,6 +551,10 @@ package game {
 						
 			/* Movement toggle */
 			var moveCharacter:Boolean = true;
+			
+			/* Store reference to amount of level objects on board */
+			var levelIndex:int = this._levelObjects.length;
+			var levelObject:GameLevelObject;
 			
 			/* Loop through all level objects */
 			while (levelIndex--) {
@@ -590,8 +640,40 @@ package game {
 					
 				}
 			}
+			
+			/* Store reference to amount of player objects on board */
+			var playerIndex:int = this._playerObjects.length;
+			var playerObject:GamePlayerObject;
+			
+			/* Loop through all player objects */
+			while (playerIndex--) {
+				/* Reference to current player object */
+				playerObject = this._playerObjects[playerIndex];
 				
-			/* Character will be within grid boundary */
+				/* Grid reference of player object */
+				var playerObjectGridRef:Point = this._grid.worldCoordToGridReference(playerObject.x, playerObject.y);
+				
+				/* Distance in grid segments between character and player object */
+				var playerObjectDistanceSegmentsX:int = playerObjectGridRef.x-characterGridRef.x;
+				var playerObjectDistanceSegmentsY:int = playerObjectGridRef.y-characterGridRef.y;
+				
+				/* Distance in coords between character and player object */
+				var playerObjectDistanceCoordX:int = playerObjectGridRef.x-this._character.container.x;
+				var playerObjectDistanceCoordY:int = playerObjectGridRef.y-this._character.container.y;
+				
+				/* Object is on the same tile as character */
+				if (playerObjectDistanceSegmentsY == 0 && playerObjectDistanceSegmentsX == 0) {
+					trace(levelObject.type);
+					/* Object is on the tile in front of character */ 
+				} else if (playerObjectDistanceSegmentsY == nextSegDistanceY && playerObjectDistanceSegmentsX == nextSegDistanceX) {					
+					
+					/* Object is not on the same or next tile as character */ 
+				} else {
+					
+				}
+			}
+				
+			/* Character will be within grid boundary if moved */
 			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
 				if (moveCharacter)
 					this._character.animateForward(nextSegmentDistance);
@@ -614,6 +696,10 @@ package game {
 		
 		public function getTotalDirectionObjects():int {
 			return this._directionObjects.length;
+		}
+		
+		public function getTotalLevelObjects():int {
+			return this._levelObjects.length;
 		}
 		
 		public function getTotalPlayerObjects():int {

@@ -40,8 +40,8 @@ package game {
 									{type: "finish", position: new Point(6, 0)});
 			
 			this._objectInventory = new Array();
-			this._objectInventory["debug"] = 3;
 			this._objectInventory["direction"] = 6;
+			this._objectInventory["water"] = 3;
 		}
 		
 		public function getObjectInventory(item:String):int {
