@@ -8,6 +8,7 @@ package game {
 		
 		public function GamePlayerObject() {
 			super();
+			this._interactive = true;
 		}
 		
 		protected function _setAttributes(attributes:Array):void {

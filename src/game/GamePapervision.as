@@ -63,5 +63,10 @@ package game {
 		public function get viewport():Viewport3D {
 			return this._viewport;
 		}
+		
+		public function resetViewport():void {
+			this._viewport = this._viewport = new Viewport3D(640, 480, true, true);
+			this._renderer.viewport = this._viewport;
+		}
 	}
 }

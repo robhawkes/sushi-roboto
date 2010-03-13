@@ -5,7 +5,6 @@ package game {
 		public var alive:Boolean = true;
 		private var _container:GameCharacterObject;
 		private var _moving:Boolean = false;
-		private var _origin:Array;
 		
 		public function GameCharacter() {
 			this._initCharacter3D();

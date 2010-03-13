@@ -7,17 +7,14 @@ package game {
 	
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
+	import flash.utils.ByteArray;
 	
 	import org.papervision3d.core.effects.BitmapFireEffect;
 	import org.papervision3d.core.math.Matrix3D;
 	import org.papervision3d.core.math.Number3D;
 	import org.papervision3d.core.render.data.RenderHitData;
 	import org.papervision3d.events.InteractiveScene3DEvent;
-	import org.papervision3d.materials.BitmapFileMaterial;
-	import org.papervision3d.materials.ColorMaterial;
-	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.DisplayObject3D;
-	import org.papervision3d.objects.parsers.Collada;
 	import org.papervision3d.view.layer.BitmapEffectLayer;
 	import org.papervision3d.view.layer.ViewportLayer;
 	import org.papervision3d.view.layer.util.ViewportLayerSortMode;
@@ -26,7 +23,7 @@ package game {
 		private var _activeDirectionObjectId:int = -1;
 		private var _activeLevelObjectId:int = -1;
 		private var _activePlayerObjectId:int = -1;
-		private var _bfx:BitmapEffectLayer;
+		private var _bfxFire:BitmapEffectLayer;
 		private var _boardViewportLayer:ViewportLayer;
 		private var _character:GameCharacter;
 		private var _completed:Boolean;
@@ -40,6 +37,7 @@ package game {
 		private var _objectViewportLayer:ViewportLayer;
 		private var _playerObjects:Vector.<GamePlayerObject>;
 		private var _registry:GameRegistry; 
+		private var _savedState:Object;
 		
 		public function GameBoard() {
 			this._registry = GameRegistry.getInstance();
@@ -94,16 +92,20 @@ package game {
 				/* Enable double click mouse events */
 				this._objectViewportLayer.doubleClickEnabled = true;
 				
-				/* Testing something */		
-				this._bfx = new BitmapEffectLayer(papervision.viewport, 800, 600);
+				this._bfxFire = new BitmapEffectLayer(papervision.viewport, 800, 600);
 				var fire:BitmapFireEffect = new BitmapFireEffect();
 				fire.fadeRate = 0.1;
 				fire.flameSpread = 1;
 				fire.flameHeight = 0.5;
 				fire.distortion = 0.5;
 				fire.distortionScale = 1;
-				this._bfx.addEffect(fire);
-				papervision.viewport.containerSprite.addLayer(this._bfx);
+				fire.smoke = 0.4;
+				this._bfxFire.addEffect(fire);
+
+				this._boardViewportLayer.addLayer(this._bfxFire);
+				
+				this._objectViewportLayer.layerIndex = 2;
+				this._bfxFire.layerIndex = 1;
 			}
 		}
 		
@@ -208,10 +210,28 @@ package game {
 					
 					//this._bfx.addEffect(new BitmapLayerEffect(new DropShadowFilter(25, 90, 0, 0.25, 8, 8, 0.5, 1)));
 					if (levelObjectItem.type == "fire") {
-						this._bfx.addDisplayObject3D(levelObject, true);
+						this._bfxFire.addDisplayObject3D(levelObject, true);
 					}
 				}
 			}
+		}
+		
+		private function removeLevelObject(levelObjectId:int):void {
+			if (levelObjectId == this._activeLevelObjectId)
+				this._activeLevelObjectId = -1;
+			
+			var object:GameLevelObject = this._levelObjects[levelObjectId];
+			
+			/* Decrease number of direction objects in use */
+			if (this._objectsInUseByType[object.type]) {
+				this._objectsInUseByType[object.type] -= 1;
+			} else {
+				this._objectsInUseByType[object.type] = 0;
+			}
+			
+			this._levelObjects.splice(levelObjectId, 1);
+			
+			this._container.removeChild(object);
 		}
 		
 		public function addDirectionObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -269,6 +289,8 @@ package game {
 				this._objectsInUseByType[object.type] = 0;
 			}
 			
+			this._directionObjects.splice(directionObjectId, 1);
+			
 			this._container.removeChild(object);
 		}
 		
@@ -294,7 +316,9 @@ package game {
 					this._objectsInUseByType[object.type] = 1;
 				}
 				
-				this._playerObjects.push(object);
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickPlayerObject);
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
+				
 				this._container.addChild(object);
 			} else {
 				trace("No water objects left");
@@ -549,7 +573,8 @@ package game {
 					break;
 			}
 						
-			/* Movement toggle */
+			/* Character toggles */
+			var killCharacter:Boolean = false;
 			var moveCharacter:Boolean = true;
 			
 			/* Store reference to amount of level objects on board */
@@ -582,7 +607,7 @@ package game {
 				/* Object is on the same tile as character */
 				if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
 					if (fatal === true) {
-						this.character.alive = false;
+						killCharacter = true;
 						moveCharacter = false;
 					}
 					
@@ -619,7 +644,7 @@ package game {
 						this._character.animateToPoint(coord.x, coord.y);
 					}
 				/* Object is on the tile in front of character */ 
-				} else if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {					
+				} else if (levelObjectDistanceSegmentsY == nextSegDistanceY && levelObjectDistanceSegmentsX == nextSegDistanceX) {
 					/* Check if finish line */
 					if (finish === true) {
 						this._completed = true;
@@ -627,13 +652,24 @@ package game {
 						break;
 					}
 					
+					var playerObjectInFront:* = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
+					if (playerObjectInFront) {
+						trace("Object is in front of character");
+					}
+					
 					/* Check if object is solid */
 					if (solid === true) {
 						if (fatal === true) {
-							this.character.alive = false;
+							killCharacter = true;
 							moveCharacter = false;
 						}
 						break;
+					}
+					
+					if (levelObject.type == "fire") {
+						if (playerObjectInFront && playerObjectInFront.type == "water") {
+							this.removeLevelObject(this._levelObjects.indexOf(levelObject));
+						}
 					}
 				/* Object is not on the same or next tile as character */ 
 				} else {
@@ -646,32 +682,35 @@ package game {
 			var playerObject:GamePlayerObject;
 			
 			/* Loop through all player objects */
-			while (playerIndex--) {
+			//while (playerIndex--) {
 				/* Reference to current player object */
-				playerObject = this._playerObjects[playerIndex];
+			//	playerObject = this._playerObjects[playerIndex];
 				
 				/* Grid reference of player object */
-				var playerObjectGridRef:Point = this._grid.worldCoordToGridReference(playerObject.x, playerObject.y);
+			//	var playerObjectGridRef:Point = this._grid.worldCoordToGridReference(playerObject.x, playerObject.y);
 				
 				/* Distance in grid segments between character and player object */
-				var playerObjectDistanceSegmentsX:int = playerObjectGridRef.x-characterGridRef.x;
-				var playerObjectDistanceSegmentsY:int = playerObjectGridRef.y-characterGridRef.y;
+			//	var playerObjectDistanceSegmentsX:int = playerObjectGridRef.x-characterGridRef.x;
+			//	var playerObjectDistanceSegmentsY:int = playerObjectGridRef.y-characterGridRef.y;
 				
 				/* Distance in coords between character and player object */
-				var playerObjectDistanceCoordX:int = playerObjectGridRef.x-this._character.container.x;
-				var playerObjectDistanceCoordY:int = playerObjectGridRef.y-this._character.container.y;
+			//	var playerObjectDistanceCoordX:int = playerObjectGridRef.x-this._character.container.x;
+			//	var playerObjectDistanceCoordY:int = playerObjectGridRef.y-this._character.container.y;
 				
 				/* Object is on the same tile as character */
-				if (playerObjectDistanceSegmentsY == 0 && playerObjectDistanceSegmentsX == 0) {
-					trace(levelObject.type);
+			//	if (playerObjectDistanceSegmentsY == 0 && playerObjectDistanceSegmentsX == 0) {
+					//trace(levelObject.type);
 					/* Object is on the tile in front of character */ 
-				} else if (playerObjectDistanceSegmentsY == nextSegDistanceY && playerObjectDistanceSegmentsX == nextSegDistanceX) {					
+			//	} else if (playerObjectDistanceSegmentsY == nextSegDistanceY && playerObjectDistanceSegmentsX == nextSegDistanceX) {					
 					
 					/* Object is not on the same or next tile as character */ 
-				} else {
+			//	} else {
 					
-				}
-			}
+			//	}
+			//}
+			
+			if (killCharacter)
+				this._character.alive = false;
 				
 			/* Character will be within grid boundary if moved */
 			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
@@ -704,6 +743,25 @@ package game {
 		
 		public function getTotalPlayerObjects():int {
 			return this._playerObjects.length;
+		}
+		
+		private function _playerObjectAtGridReference(target:Point):* {
+			/* Store reference to amount of player objects on board */
+			var playerIndex:int = this._playerObjects.length;
+			var playerObject:GamePlayerObject;
+			var playerObjectGridRef:Point
+			
+			/* Loop through all player objects */
+			while (playerIndex--) {
+				/* Reference to current player object */
+				playerObject = this._playerObjects[playerIndex];
+				playerObjectGridRef = this.grid.worldCoordToGridReference(playerObject.x, playerObject.y);
+				
+				if (playerObjectGridRef.x == target.x && playerObjectGridRef.y == target.y)
+					return playerObject;
+			}
+			
+			return false;
 		}
 		
 		public function set activeDirectionObjectId(id:int):void {

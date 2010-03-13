@@ -17,11 +17,14 @@ package game {
 			this._setAttributes(attributes);
 			
 			var material:ColorMaterial = new ColorMaterial(0x0000FF);
+			material.interactive = true;
 			
 			var object:Sphere = new Sphere(material, 10);
 			object.z -= 0.5 * 40 + 20;
 			
 			this.addChild(object);
+			
+			this._interactiveObject = object;
 		}
 	}
 }

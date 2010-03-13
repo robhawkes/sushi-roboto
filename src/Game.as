@@ -260,7 +260,7 @@ package {
 		
 		/* Keyboard listeners */
 		private function _onKeyDown(e:KeyboardEvent):void {
-			trace(e.keyCode);
+			//trace(e.keyCode);
 			switch (e.keyCode) {
 				case 32: // Spacebar
 					if (!this._play) {
@@ -297,7 +297,17 @@ package {
 					var papervision:GamePapervision = this._registry.getEntry("papervision");
 					if (papervision) {
 						this._play = false;
-						this._board.resetBoard();
+											
+						this._papervision.removeChildFromScene(this._board.container);
+						
+						this.removeChild(this._papervision.viewport);
+						this._papervision.resetViewport();
+						this.addChild(this._papervision.viewport);
+						
+						this._initBoard();
+						this._papervision.addChildToScene(this._board.container);
+						this._board.initViewportLayers();
+						this._board.populateBoard();
 					}
 					break;
 				case 87: // w
@@ -305,7 +315,7 @@ package {
 					if (this._board.objectsRemainingByType("water") > 0) {
 						this._board.addPlayerWaterObject();
 					} else {
-						trace("No more directional objects left in invetory")
+						trace("No more water objects left in invetory")
 					}
 					break;
 			}
