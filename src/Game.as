@@ -16,10 +16,11 @@ package {
 	import game.GameMap;
 	import game.GamePapervision;
 	import game.GameRegistry;
+	import game.GameUIMenuInner;
 	
 	/* Change output settings */
 	[SWF(width="800", height="600", frameRate="25", backgroundColor="#000000")]
-	public class Game extends Sprite {
+	public class Game extends Sprite {		
 		/* GameRegistry object */
 		private var _registry:GameRegistry;
 		
@@ -49,7 +50,7 @@ package {
 		private var _papervision:GamePapervision;
 		
 		/* Constructor method */
-		public function Game() {
+		public function Game() {		
 			/* Initialise game registry */
 			this._registry = GameRegistry.getInstance();
 			
@@ -128,6 +129,10 @@ package {
 			/* Initialise board viewport layers and populate board */
 			this._board.initViewportLayers();
 			this._board.populateBoard();
+			
+			var gameUI:GameUIMenuInner = new GameUIMenuInner();
+			this.addChild(gameUI.ui);
+			gameUI.addEventListener("GAME_RESET", function():void { trace("Clicked reset button"); });
 			
 			/* Create event listner to run a method on each frame */
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
