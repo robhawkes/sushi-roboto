@@ -16,7 +16,7 @@ package {
 	import game.GameMap;
 	import game.GamePapervision;
 	import game.GameRegistry;
-	import game.GameUIMenuInner;
+	import game.GameUILevel;
 	
 	/* Change output settings */
 	[SWF(width="800", height="600", frameRate="25", backgroundColor="#000000")]
@@ -26,6 +26,7 @@ package {
 		
 		/* GameLevelData object */
 		private var _levelData:GameLevelData;
+		private var _levelUI:GameUILevel;
 		
 		/* GameInventory object */
 		private var _inventory:GameInventory;
@@ -126,16 +127,24 @@ package {
 			/* Add Papervision object to registry */
 			this._registry.setEntry("papervision", this._papervision);
 			
+			/* Initialise game level UI */
+			this._initLevelUI();
+			
 			/* Initialise board viewport layers and populate board */
 			this._board.initViewportLayers();
 			this._board.populateBoard();
 			
-			var gameUI:GameUIMenuInner = new GameUIMenuInner();
-			this.addChild(gameUI.ui);
-			gameUI.addEventListener("GAME_RESET", function():void { trace("Clicked reset button"); });
-			
 			/* Create event listner to run a method on each frame */
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+		}
+		
+		/* Level UI */
+		private function _initLevelUI():void {
+			this._levelUI = new GameUILevel(stage.stageWidth, stage.stageHeight);
+			this.addChild(this._levelUI.ui);
+			
+			this._levelUI.addEventListener("GAME_RESET", this._onClickMenuReset);
+			this._levelUI.addEventListener("GAME_MENU", function():void { trace("Clicked menu button"); });
 		}
 		
 		/* Keyboard listeners initialisation */
@@ -263,6 +272,31 @@ package {
 			}
 		}
 		
+		private function _onClickMenuReset(e:Event):void {
+			this._levelUI.hideUI();
+			
+			this._levelUI.addEventListener("GAME_UI_CLOSED", this._resetGame);
+		}
+		
+		private function _resetGame(e:Event):void {
+			this.removeChild(this._levelUI.ui);
+			
+			this._play = false;
+			
+			this._papervision.removeChildFromScene(this._board.container);
+			
+			this.removeChild(this._papervision.viewport);
+			this._papervision.resetViewport();
+			this.addChild(this._papervision.viewport);
+			
+			this._initBoard();
+			this._papervision.addChildToScene(this._board.container);
+			this._board.initViewportLayers();
+			this._board.populateBoard();
+			
+			this.addChild(this._levelUI.ui);
+		}
+		
 		/* Keyboard listeners */
 		private function _onKeyDown(e:KeyboardEvent):void {
 			//trace(e.keyCode);
@@ -298,22 +332,15 @@ package {
 						trace("No more directional objects left in invetory")
 					}
 					break;
-				case 82: // r
-					var papervision:GamePapervision = this._registry.getEntry("papervision");
-					if (papervision) {
-						this._play = false;
-											
-						this._papervision.removeChildFromScene(this._board.container);
-						
-						this.removeChild(this._papervision.viewport);
-						this._papervision.resetViewport();
-						this.addChild(this._papervision.viewport);
-						
-						this._initBoard();
-						this._papervision.addChildToScene(this._board.container);
-						this._board.initViewportLayers();
-						this._board.populateBoard();
+				case 71: // g
+					if (!this._levelUI.ui.visible) {
+						this._levelUI.showUI();
+					} else {
+						this._levelUI.hideUI();
 					}
+					break;
+				case 82: // r
+					
 					break;
 				case 87: // w
 					/* Add new water object */
