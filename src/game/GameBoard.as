@@ -9,7 +9,6 @@ package game {
 	
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
-	import flash.utils.ByteArray;
 	
 	import org.papervision3d.core.effects.BitmapFireEffect;
 	import org.papervision3d.core.math.Matrix3D;
@@ -163,6 +162,12 @@ package game {
 			this._container.addChild(this._character.container);
 			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
 			this._character.moveToPoint(characterPosition.x, characterPosition.y);
+			
+			this._character.container.scale = 0;
+			var previousRotationZ:int = this._character.container.rotationZ;
+			this._character.container.rotationZ = -1440;
+			
+			Tweener.addTween(this._character.container, {scale: 1, rotationZ: 0, time: 3, delay: 1, transition: "easeInOutExpo"});
 		}
 		
 		private function _addLevelObjects():void {
@@ -209,8 +214,9 @@ package game {
 					
 					var previousZ:int = levelObject.z;
 					levelObject.z = -300;
+					levelObject.scale = 0;
 					
-					Tweener.addTween(levelObject, {z: previousZ, time: 0.5, delay: 1+Math.random()*1, transition: "easeOutExpo"});
+					Tweener.addTween(levelObject, {scale: 1, z: previousZ, time: 0.6, delay: 1+Math.random()*1, transition: "easeOutExpo"});
 					
 					/* Add object to objects viewport layer */
 					this._objectViewportLayer.addDisplayObject3D(levelObject, true);

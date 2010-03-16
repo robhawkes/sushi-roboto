@@ -19,6 +19,8 @@ package {
 	import game.GameUILevel;
 	import game.GameUIMain;
 	
+	import org.papervision3d.core.math.Matrix3D;
+	
 	/* Change output settings */
 	[SWF(width="800", height="600", frameRate="25", backgroundColor="#000000")]
 	public class Game extends Sprite {
@@ -362,6 +364,7 @@ package {
 				
 			this._play = false;
 			
+			var previousBoardTransform:Matrix3D = this._board.container.transform;
 			this._papervision.removeChildFromScene(this._board.container);
 			
 			this._levelSprite.removeChild(this._papervision.viewport);
@@ -369,7 +372,9 @@ package {
 			this._levelSprite.addChild(this._papervision.viewport);
 			
 			this._initBoard();
+			this._board.container.transform = previousBoardTransform;
 			this._papervision.addChildToScene(this._board.container);
+			
 			this._board.initViewportLayers();
 			this._board.populateBoard();
 			
