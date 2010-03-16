@@ -47,7 +47,7 @@ package game {
 		}
 		
 		private function _onClickCloseButton(e:MouseEvent):void {
-			this.hideUI();
+			this.hide();
 		}
 		
 		private function _onClickResetButton(e:MouseEvent):void {
@@ -58,13 +58,13 @@ package game {
 			dispatchEvent(new Event("GAME_MENU"));
 		}
 		
-		public function showUI():void {
+		public function show():void {
 			this._ui.visible = true;
 			Tweener.addTween(this._mask, {alpha: 0.8, time: 0.2, transition: "linear"});
 			Tweener.addTween(this._levelMenu, {scaleX: 1, scaleY: 1, time: 0.3, delay: 0.2, transition: "easeOutBack"});
 		}
 		
-		public function hideUI():void {
+		public function hide():void {
 			Tweener.addTween(this._levelMenu, {scaleX: 0, scaleY: 0, time: 0.3, transition: "easeInBack"});
 			Tweener.addTween(this._mask, {alpha: 0, time: 0.2, delay: 0.3, transition: "linear", onCompleteScope: this, onComplete: onHideComplete});
 			
@@ -72,16 +72,6 @@ package game {
 				this._ui.visible = false;
 				dispatchEvent(new Event("GAME_UI_CLOSED"));
 			}
-		}
-		
-		public function snapShutUI():void {
-			this._levelMenu.scaleX = 0;
-			this._levelMenu.scaleY = 0;
-			this._mask.alpha = 0;
-			
-			this._ui.visible = false;
-			
-			dispatchEvent(new Event("GAME_UI_CLOSED"));
 		}
 		
 		public function get ui():MovieClip {

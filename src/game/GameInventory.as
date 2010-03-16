@@ -33,7 +33,7 @@ package game {
 				objectAmount = new TextField();
 				objectAmount.text = this._levelData.objectInventory[object];
 				
-				trace(objectLabel.text+": "+objectAmount.text);
+				//trace(objectLabel.text+": "+objectAmount.text);
 			}
 		}
 		

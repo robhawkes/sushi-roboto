@@ -9,8 +9,6 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
-	import flash.events.TimerEvent;
-	import flash.utils.Timer;
 	
 	import game.GameBoard;
 	import game.GameInventory;
@@ -19,16 +17,22 @@ package {
 	import game.GamePapervision;
 	import game.GameRegistry;
 	import game.GameUILevel;
+	import game.GameUIMain;
 	
 	/* Change output settings */
 	[SWF(width="800", height="600", frameRate="25", backgroundColor="#000000")]
-	public class Game extends Sprite {		
+	public class Game extends Sprite {
+		private var _uiSprite:Sprite;
+		private var _levelSprite:Sprite;
+		
+		private var _mainUI:GameUIMain;
+		private var _levelUI:GameUILevel;
+		
 		/* GameRegistry object */
 		private var _registry:GameRegistry;
 		
 		/* GameLevelData object */
 		private var _levelData:GameLevelData;
-		private var _levelUI:GameUILevel;
 		
 		/* GameInventory object */
 		private var _inventory:GameInventory;
@@ -53,7 +57,23 @@ package {
 		private var _papervision:GamePapervision;
 		
 		/* Constructor method */
-		public function Game() {		
+		public function Game() {
+			this._levelSprite = new Sprite();
+			this.addChild(this._levelSprite);
+			
+			this._uiSprite = new Sprite();
+			this.addChild(this._uiSprite);
+			
+			this._mainUI = new GameUIMain();
+			this._uiSprite.addChild(this._mainUI.ui);
+			
+			this._mainUI.addEventListener("GAME_LEVEL_1", this._onClickLevel1);
+			
+			/* Initialise keyboard listeners */
+			this._initKeyboardListeners();
+		}
+		
+		private function _onClickLevel1(e:Event):void {
 			/* Initialise game registry */
 			this._registry = GameRegistry.getInstance();
 			
@@ -67,10 +87,19 @@ package {
 			this._initBoard();
 			
 			/* Initialise augmented reality */
-			this._initFLAR();
-			
-			/* Initialise keyboard listeners */
-			this._initKeyboardListeners();
+			if (!this._flarManager) {
+				this._initFLAR();
+				
+			/* Seriously messy code duplication from onFlarManagerInit */
+			} else {
+				/* Display webcam */
+				this._levelSprite.addChild(Sprite(this._flarManager.flarSource));
+				
+				/* Initialise board viewport layers */
+				this._board.initViewportLayers();
+				
+				this._mainUI.hide();
+			}
 		}
 		
 		/* Game level data initialisation */
@@ -86,7 +115,7 @@ package {
 			if (this._levelData)
 				this._map.drawGrid(this._levelData.rows, this._levelData.columns);
 			
-			this.addChild(this._map);
+			this._levelSprite.addChild(this._map);
 			this._registry.setEntry("gameMap", this._map);
 		}
 		
@@ -121,7 +150,7 @@ package {
 			this._papervision.setFLARCamera(this._flarManager.cameraParams);
 			
 			/* Add Papervision viewport to the main stage */
-			this.addChild(this._papervision.viewport);
+			this._levelSprite.addChild(this._papervision.viewport);
 			
 			/* Add empty board containter to Papervision scene */
 			this._papervision.addChildToScene(this._board.container);
@@ -136,10 +165,10 @@ package {
 		/* Level UI */
 		private function _initLevelUI():void {
 			this._levelUI = new GameUILevel(stage.stageWidth, stage.stageHeight);
-			this.addChild(this._levelUI.ui);
+			this._uiSprite.addChild(this._levelUI.ui);
 			
 			this._levelUI.addEventListener("GAME_RESET", this._onClickMenuReset);
-			this._levelUI.addEventListener("GAME_MENU", function():void { trace("Clicked menu button"); });
+			this._levelUI.addEventListener("GAME_MENU", this._onClickMenuMenu);
 		}
 		
 		/* Keyboard listeners initialisation */
@@ -153,18 +182,15 @@ package {
 			this._flarManager.removeEventListener(Event.INIT, this._onFlarManagerLoad);
 			
 			/* Display webcam */
-			this.addChild(Sprite(this._flarManager.flarSource));
-			
-			/* Delay for a couple of seconds for camera to load */
-			/*var timer:Timer = new Timer(2000, 1);
-			timer.addEventListener(TimerEvent.TIMER_COMPLETE, this._onFlarManagerTimerComplete);
-			timer.start();*/
+			this._levelSprite.addChild(Sprite(this._flarManager.flarSource));
 			
 			/* Run Papervision initialisation method */
 			this._initPapervision();
 			
 			/* Initialise board viewport layers */
 			this._board.initViewportLayers();
+			
+			this._mainUI.hide();
 		}
 		
 		/* Run when a new marker is recognised */
@@ -281,28 +307,46 @@ package {
 		}
 		
 		private function _onClickMenuReset(e:Event):void {
-			this._levelUI.hideUI();
+			this._levelUI.hide();
 			
 			this._levelUI.addEventListener("GAME_UI_CLOSED", this._resetGame);
 		}
 		
-		private function _resetGame(e:Event):void {
-			this.removeChild(this._levelUI.ui);
+		private function _onClickMenuMenu(e:Event):void {
+			this._levelUI.hide();
 			
+			this._papervision.removeChildFromScene(this._board.container);
+			this._levelSprite.removeChild(this._papervision.viewport);
+			this._papervision.resetViewport();
+			
+			this.removeChild(this._levelSprite);
+			this._levelSprite = new Sprite();
+			this.addChildAt(this._levelSprite, 0);
+			
+			this._levelSprite.addChild(this._papervision.viewport);
+			
+			this._play = false;
+			this._board = null;
+			this._levelData = null;
+			this._map = null;
+			this._registry = null;
+			
+			this._mainUI.show();
+		}
+		
+		private function _resetGame(e:Event = null):void {			
 			this._play = false;
 			
 			this._papervision.removeChildFromScene(this._board.container);
 			
-			this.removeChild(this._papervision.viewport);
+			this._levelSprite.removeChild(this._papervision.viewport);
 			this._papervision.resetViewport();
-			this.addChild(this._papervision.viewport);
+			this._levelSprite.addChild(this._papervision.viewport);
 			
 			this._initBoard();
 			this._papervision.addChildToScene(this._board.container);
 			this._board.initViewportLayers();
 			this._board.populateBoard();
-			
-			this.addChild(this._levelUI.ui);
 			
 			if (!this.hasEventListener(Event.ENTER_FRAME))
 				this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
@@ -354,11 +398,14 @@ package {
 				case 71: // g
 					if (!this._levelUI.ui.visible) {
 						this._pauseGame();
-						this._levelUI.showUI();
+						this._levelUI.show();
 					} else {
 						this._continueGame();
-						this._levelUI.hideUI();
+						this._levelUI.hide();
 					}
+					break;
+				case 72: // h
+					this._mainUI.hide();
 					break;
 				case 82: // r
 					if (!this._map) {
