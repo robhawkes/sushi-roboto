@@ -74,6 +74,16 @@ package game {
 			}
 		}
 		
+		public function snapShutUI():void {
+			this._levelMenu.scaleX = 0;
+			this._levelMenu.scaleY = 0;
+			this._mask.alpha = 0;
+			
+			this._ui.visible = false;
+			
+			dispatchEvent(new Event("GAME_UI_CLOSED"));
+		}
+		
 		public function get ui():MovieClip {
 			return this._ui;
 		}

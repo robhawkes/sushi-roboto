@@ -2,6 +2,8 @@
  * TODO: Combine updateActiveDirectionalObject() and updateActivePlayerObjet() methods as they have similar functionality
  */
 package game {
+	import caurina.transitions.Tweener;
+	
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.utils.geom.FLARPVGeomUtils;
 	
@@ -112,6 +114,8 @@ package game {
 		public function populateBoard():void {
 			/* Add grid 3D object to board */
 			this._container.addChild(this._grid.container);
+			this._grid.container.scale = 0;
+			Tweener.addTween(this._grid.container, {scale: 1, time: 0.3, delay: 0.5, transition: "easeOutBack"})
 			
 			/* Add character to board */
 			this._addCharacter();
@@ -199,8 +203,14 @@ package game {
 				
 				if (levelObject) {
 					var coord:Point = this._grid.gridReferenceToWorldCoord(levelObjectItem.position.x, levelObjectItem.position.y);
+										
 					levelObject.x = coord.x;
 					levelObject.y = coord.y;
+					
+					var previousZ:int = levelObject.z;
+					levelObject.z = -300;
+					
+					Tweener.addTween(levelObject, {z: previousZ, time: 0.5, delay: 1+Math.random()*1, transition: "easeOutExpo"});
 					
 					/* Add object to objects viewport layer */
 					this._objectViewportLayer.addDisplayObject3D(levelObject, true);

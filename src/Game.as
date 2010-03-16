@@ -9,6 +9,8 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.events.TimerEvent;
+	import flash.utils.Timer;
 	
 	import game.GameBoard;
 	import game.GameInventory;
@@ -129,13 +131,6 @@ package {
 			
 			/* Initialise game level UI */
 			this._initLevelUI();
-			
-			/* Initialise board viewport layers and populate board */
-			this._board.initViewportLayers();
-			this._board.populateBoard();
-			
-			/* Create event listner to run a method on each frame */
-			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 		}
 		
 		/* Level UI */
@@ -160,11 +155,16 @@ package {
 			/* Display webcam */
 			this.addChild(Sprite(this._flarManager.flarSource));
 			
+			/* Delay for a couple of seconds for camera to load */
+			/*var timer:Timer = new Timer(2000, 1);
+			timer.addEventListener(TimerEvent.TIMER_COMPLETE, this._onFlarManagerTimerComplete);
+			timer.start();*/
+			
 			/* Run Papervision initialisation method */
 			this._initPapervision();
 			
-			/* Initialise game map */
-			this._initMap();
+			/* Initialise board viewport layers */
+			this._board.initViewportLayers();
 		}
 		
 		/* Run when a new marker is recognised */
@@ -183,6 +183,14 @@ package {
 			switch (marker.patternId) {
 				case _boardPatternId: // Board marker
 					trace("Added board marker");
+					if (!this._map) {
+						/* Initialise game map */
+						this._initMap();
+						
+						this._board.populateBoard();
+						
+						this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+					}
 					break;
 				case _objectPatternId: // Player object marker
 					trace("Added player object marker");
@@ -295,6 +303,17 @@ package {
 			this._board.populateBoard();
 			
 			this.addChild(this._levelUI.ui);
+			
+			if (!this.hasEventListener(Event.ENTER_FRAME))
+				this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+		}
+		
+		private function _pauseGame():void {
+			this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+		}
+		
+		private function _continueGame():void {
+			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 		}
 		
 		/* Keyboard listeners */
@@ -334,13 +353,22 @@ package {
 					break;
 				case 71: // g
 					if (!this._levelUI.ui.visible) {
+						this._pauseGame();
 						this._levelUI.showUI();
 					} else {
+						this._continueGame();
 						this._levelUI.hideUI();
 					}
 					break;
 				case 82: // r
-					
+					if (!this._map) {
+						/* Initialise game map */
+						this._initMap();
+						
+						this._board.populateBoard();
+						
+						this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+					}
 					break;
 				case 87: // w
 					/* Add new water object */
