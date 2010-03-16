@@ -95,10 +95,18 @@ package {
 				/* Display webcam */
 				this._levelSprite.addChild(Sprite(this._flarManager.flarSource));
 				
+				this._levelSprite.removeChild(this._papervision.viewport);
+				this._papervision.resetViewport();
+				this._levelSprite.addChild(this._papervision.viewport);
+				
+				this._papervision.addChildToScene(this._board.container);
+				
 				/* Initialise board viewport layers */
 				this._board.initViewportLayers();
 				
 				this._mainUI.hide();
+				
+				this._enableMarkerEvents();
 			}
 		}
 		
@@ -133,14 +141,23 @@ package {
 		private function _initFLAR():void {
 			/* Initialise FLARManager */
 			this._flarManager = new FLARManager("flarConfig.xml");
-
+			
+			/* Event listener for when the FLARManager object has loaded */
+			this._flarManager.addEventListener(Event.INIT, this._onFlarManagerLoad);
+		}
+		
+		private function _enableMarkerEvents():void {
 			/* Event listener for when a new marker is recognised */
 			this._flarManager.addEventListener(FLARMarkerEvent.MARKER_ADDED, this._onMarkerAdded);
 			/* Event listener for when a marker is removed */
 			this._flarManager.addEventListener(FLARMarkerEvent.MARKER_REMOVED, this._onMarkerRemoved);
-			
-			/* Event listener for when the FLARManager object has loaded */
-			this._flarManager.addEventListener(Event.INIT, this._onFlarManagerLoad);
+		}
+		
+		private function _disableMarkerEvents():void {
+			/* Event listener for when a new marker is recognised */
+			this._flarManager.removeEventListener(FLARMarkerEvent.MARKER_ADDED, this._onMarkerAdded);
+			/* Event listener for when a marker is removed */
+			this._flarManager.removeEventListener(FLARMarkerEvent.MARKER_REMOVED, this._onMarkerRemoved);
 		}
 		
 		/* Papervision initialisation method */
@@ -191,6 +208,8 @@ package {
 			this._board.initViewportLayers();
 			
 			this._mainUI.hide();
+			
+			this._enableMarkerEvents();
 		}
 		
 		/* Run when a new marker is recognised */
@@ -209,7 +228,7 @@ package {
 			switch (marker.patternId) {
 				case _boardPatternId: // Board marker
 					trace("Added board marker");
-					if (!this._map) {
+					if (!this._map || this._map == null) {
 						/* Initialise game map */
 						this._initMap();
 						
@@ -252,7 +271,9 @@ package {
 					break;
 			}	
 			
-			this._map.removeMarker();
+			if (this._map)
+				this._map.removeMarker();
+			
 			this._activeMarker = null;
 		}
 		
@@ -309,6 +330,8 @@ package {
 		private function _onClickMenuReset(e:Event):void {
 			this._levelUI.hide();
 			
+			this._enableMarkerEvents();
+			
 			this._levelUI.addEventListener("GAME_UI_CLOSED", this._resetGame);
 		}
 		
@@ -334,7 +357,9 @@ package {
 			this._mainUI.show();
 		}
 		
-		private function _resetGame(e:Event = null):void {			
+		private function _resetGame(e:Event = null):void {
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._resetGame);
+				
 			this._play = false;
 			
 			this._papervision.removeChildFromScene(this._board.container);
@@ -353,10 +378,12 @@ package {
 		}
 		
 		private function _pauseGame():void {
+			this._disableMarkerEvents();
 			this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 		}
 		
 		private function _continueGame():void {
+			this._enableMarkerEvents();
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 		}
 		
