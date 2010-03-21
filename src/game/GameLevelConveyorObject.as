@@ -1,5 +1,6 @@
 package game {
-	import org.papervision3d.materials.BitmapFileMaterial;
+	import flash.net.URLRequest;
+	
 	import org.papervision3d.materials.MovieMaterial;
 	import org.papervision3d.objects.primitives.Plane;
 	
@@ -14,6 +15,7 @@ package game {
 		
 		private function _initObject():void {
 			this._type = "conveyor";
+			this._ambientSound = new GameSound(new URLRequest("resources/sounds/objects/conveyor/conveyor_ambient.mp3"))
 			
 			var attributes:Array = new Array();
 			attributes["direction"] = "up";

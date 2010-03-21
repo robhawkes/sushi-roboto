@@ -2,6 +2,9 @@ package {
 	/*
 	 * TODO: Decouple classes; end reliance on GameRegistry to pass classes around like GameLevelData
 	 */
+	import caurina.transitions.Tweener;
+	import caurina.transitions.properties.SoundShortcuts;
+	
 	import com.transmote.flar.FLARManager;
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.marker.FLARMarkerEvent;
@@ -9,6 +12,9 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.media.Sound;
+	import flash.media.SoundChannel;
+	import flash.media.SoundTransform;
 	
 	import game.GameBoard;
 	import game.GameInventory;
@@ -29,6 +35,14 @@ package {
 		
 		private var _mainUI:GameUIMain;
 		private var _levelUI:GameUILevel;
+		
+		[Embed(source="resources/sounds/Game Sounds.swf", symbol="GameSoundMainLoop")]
+		private var _gameSoundMainLoop:Class;
+		
+		private var _soundtrack:Sound;
+		private var _soundtrackTransform:SoundTransform;
+		private var _soundtrackChannel:SoundChannel;
+		private var _soundtrackPositionWhenStopped:Number;
 		
 		/* GameRegistry object */
 		private var _registry:GameRegistry;
@@ -60,6 +74,9 @@ package {
 		
 		/* Constructor method */
 		public function Game() {
+			/* Enable Tweener sound functions */
+			SoundShortcuts.init();
+			
 			this._levelSprite = new Sprite();
 			this.addChild(this._levelSprite);
 			
@@ -70,17 +87,26 @@ package {
 			this._uiSprite.addChild(this._mainUI.ui);
 			
 			this._mainUI.addEventListener("GAME_LEVEL_1", this._onClickLevel1);
+			this._mainUI.addEventListener("GAME_LEVEL_2", this._onClickLevel2);
 			
 			/* Initialise keyboard listeners */
 			this._initKeyboardListeners();
 		}
 		
 		private function _onClickLevel1(e:Event):void {
+			this._initLevel(1);
+		}
+		
+		private function _onClickLevel2(e:Event):void {
+			this._initLevel(2);
+		}
+		
+		private function _initLevel(levelId:int):void {
 			/* Initialise game registry */
 			this._registry = GameRegistry.getInstance();
 			
 			/* Initialise current level data */
-			this._initLevelData();	
+			this._initLevelData(levelId);	
 			
 			/* Initialise game inventory system */
 			this._initInventory();
@@ -92,7 +118,7 @@ package {
 			if (!this._flarManager) {
 				this._initFLAR();
 				
-			/* Seriously messy code duplication from onFlarManagerInit */
+				/* Seriously messy code duplication from onFlarManagerInit */
 			} else {
 				/* Display webcam */
 				this._levelSprite.addChild(Sprite(this._flarManager.flarSource));
@@ -110,11 +136,18 @@ package {
 				
 				this._enableMarkerEvents();
 			}
+			
+			//var soundtrack:GameSoundMainLoop = new GameSound(new URLRequest("resources/sounds/Main Loop.mp3"));
+			this._soundtrack = new this._gameSoundMainLoop();
+			this._soundtrackTransform = new SoundTransform(0);
+			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
+			
+			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 1, time: 4, transition: "linear"});
 		}
 		
 		/* Game level data initialisation */
-		private function _initLevelData():void {
-			this._levelData = new GameLevelData(0);
+		private function _initLevelData(levelId:int):void {
+			this._levelData = new GameLevelData(levelId);
 			this._registry.setEntry("levelData", this._levelData);
 		}
 		
@@ -385,11 +418,20 @@ package {
 		private function _pauseGame():void {
 			this._disableMarkerEvents();
 			this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+			this._soundtrackPositionWhenStopped = this._soundtrackChannel.position;
+			this._soundtrackChannel.stop();
 		}
 		
 		private function _continueGame():void {
 			this._enableMarkerEvents();
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+			this._soundtrackChannel = this._soundtrack.play(this._soundtrackPositionWhenStopped, 1);
+			this._soundtrackChannel.addEventListener(Event.SOUND_COMPLETE, this._restartSoundLoop);
+		}
+		
+		private function _restartSoundLoop(e:Event):void {
+			this._soundtrackChannel.removeEventListener(Event.SOUND_COMPLETE, this._restartSoundLoop);
+			this._soundtrackChannel = this._soundtrack.play(0, 999);
 		}
 		
 		/* Keyboard listeners */
@@ -439,8 +481,26 @@ package {
 				case 72: // h
 					this._mainUI.hide();
 					break;
+				case 79: // o
+					/* Add new wok object */
+					if (this._board.objectsRemainingByType("wok") > 0) {
+						this._board.addPlayerWokObject();
+					} else {
+						trace("No more wok objects left in invetory")
+					}
+					break;
 				case 82: // r
 					if (!this._map) {
+						/* Initialise game map */
+						this._initMap();
+						
+						this._board.populateBoard();
+						
+						this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+					}
+					break;
+				case 83: // s
+					if (!this._map || this._map == null) {
 						/* Initialise game map */
 						this._initMap();
 						

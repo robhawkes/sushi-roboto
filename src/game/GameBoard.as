@@ -9,6 +9,7 @@ package game {
 	
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
+	import flash.net.URLRequest;
 	
 	import org.papervision3d.core.effects.BitmapFireEffect;
 	import org.papervision3d.core.math.Matrix3D;
@@ -30,6 +31,7 @@ package game {
 		private var _completed:Boolean;
 		private var _container:DisplayObject3D;
 		private var _directionObjects:Vector.<GameDirectionObject>;
+		private var _objectViewportLayerBottom:ViewportLayer;
 		private var _grid:GameGrid;
 		private var _inventory:GameInventory;
 		private var _levelData:GameLevelData;
@@ -72,16 +74,11 @@ package game {
 				
 				this._boardViewportLayer = papervision.viewport.getChildLayer(this._grid.container, true);
 				this._boardViewportLayer.sortMode = ViewportLayerSortMode.INDEX_SORT;
-
-				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
-				this._objectViewportLayer.alpha = 0.8;
 				
-				this._boardViewportLayer.addLayer(this._objectViewportLayer);
-				
-				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
-				
+				this._objectViewportLayerBottom = new ViewportLayer(papervision.viewport, null);
+				this._boardViewportLayer.addLayer(this._objectViewportLayerBottom);
 				/* Mask out green areas (walls of pits etc) http://saqoosha.net/en/2009/01/08/1676/ */
-				this._objectViewportLayer.filters = [
+				this._objectViewportLayerBottom.filters = [
 					new ColorMatrixFilter([
 						1, 0, 0, 0, 0,
 						0, 1, 0, 0, 0,
@@ -89,6 +86,12 @@ package game {
 						1, -1, 1, 1, 0
 					])
 				];
+
+				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
+				this._objectViewportLayer.alpha = 0.8;
+				this._boardViewportLayer.addLayer(this._objectViewportLayer);
+				
+				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
 				
 				/* Enable double click mouse events */
 				this._objectViewportLayer.doubleClickEnabled = true;
@@ -105,6 +108,7 @@ package game {
 
 				this._boardViewportLayer.addLayer(this._bfxFire);
 				
+				this._objectViewportLayerBottom.layerIndex = 0;
 				this._objectViewportLayer.layerIndex = 2;
 				this._bfxFire.layerIndex = 1;
 			}
@@ -121,6 +125,9 @@ package game {
 			
 			/* Add level objects to board */
 			this._addLevelObjects();
+			
+			/* Add environment objects */
+			this._addEnvironmentObjects();
 			
 			/* Add board environment */
 			/*var platesMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/plates/Lathe_NURBS.4Ambient_Occlusion.jpg")});
@@ -146,7 +153,7 @@ package game {
 			this._container.addChild(noodles);
 			this._boardViewportLayer.addDisplayObject3D(noodles, true);*/
 			
-			/*var wokMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/wok/Connect_ObjectSurface_Color.jpg")});
+			/*var wokMaterials:MaterialsList = new MaterialsList({all: new ColorMaterial(0xFF0000)});
 			var wok:Collada = new Collada("resources/objects/wok/wok.dae", wokMaterials);
 			wok.scale = 0.001;
 			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
@@ -155,7 +162,19 @@ package game {
 			wok.rotationZ = 180;
 			wok.rotationX = -90;
 			this._container.addChild(wok);
-			this._boardViewportLayer.addDisplayObject3D(wok, true);*/
+			this._boardViewportLayer.addDisplayObject3D(wok, true);
+			*/
+			
+			/*var tapMaterials:MaterialsList = new MaterialsList({all: new BitmapFileMaterial("resources/objects/tap/tap.jpg")});
+			var tap:Collada = new Collada("resources/objects/tap/tap.dae", tapMaterials);
+			tap.scale = 0.3;
+			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
+			tap.x = coord.x;
+			tap.y = coord.y;
+			tap.rotationX = -90;
+			this._container.addChild(tap);
+			this._boardViewportLayer.addDisplayObject3D(tap, true);
+			*/
 		}
 		
 		private function _addCharacter():void {
@@ -170,17 +189,70 @@ package game {
 			Tweener.addTween(this._character.container, {scale: 1, rotationZ: 0, time: 3, delay: 1, transition: "easeInOutExpo"});
 		}
 		
+		private function _addEnvironmentObjects():void {
+			for each (var envObjectItem:Object in this._levelData.environmentObjects) {
+				var envObject:GameEnvironmentObject;
+				
+				switch (envObjectItem.type) {
+					case "sink":
+						if (envObjectItem.size) {
+							var size:Point = envObjectItem.size;	
+						}
+						envObject = new GameEnvironmentSinkObject(size);
+						break;
+					default:
+						trace("There are no objects of type "+envObjectItem.type);
+						break;
+				}
+				
+				if (envObject) {
+					var coord:Point = this._grid.gridReferenceToWorldCoord(envObjectItem.position.x, envObjectItem.position.y);
+					
+					envObject.x = coord.x;
+					envObject.y = coord.y;
+					
+					if (envObjectItem.size) {
+						envObject.x += ((envObjectItem.size.x/2)-0.5)*40;
+						envObject.y += ((envObjectItem.size.y/2)-0.5)*40;
+					}
+					
+					var previousZ:int = envObject.z;
+					envObject.z = -300;
+					envObject.scale = 0;
+					
+					Tweener.addTween(envObject, {scale: 1, z: previousZ, time: 0.6, delay: 1+Math.random()*1, transition: "easeOutExpo"});
+					
+					/* Add object to objects viewport layer */
+					switch (envObjectItem.type) {
+						case "sink":
+							this._objectViewportLayerBottom.addDisplayObject3D(envObject, true);
+							break;
+						default:
+							this._objectViewportLayer.addDisplayObject3D(envObject, true);
+					}
+					
+					this._container.addChild(envObject);
+				}
+			}
+		}
+		
 		private function _addLevelObjects():void {
 			for each (var levelObjectItem:Object in this._levelData.levelObjects) {
 				//trace("Place "+levelObjectItem.type+" at "+levelObjectItem.position);
 				var levelObject:GameLevelObject;
+				var texture:String;
 				
 				switch (levelObjectItem.type) {
 					case "conveyor":
 						levelObject = new GameLevelConveyorObject();
 						break;
 					case "finish":
-						levelObject = new GameLevelFinishObject();
+						if (levelObjectItem.orientation) {
+							var orientation:String = levelObjectItem.orientation;
+							levelObject = new GameLevelFinishObject(orientation);
+						} else {
+							levelObject = new GameLevelFinishObject();
+						}
 						break;
 					case "fire":
 						levelObject = new GameLevelFireObject();	
@@ -192,11 +264,25 @@ package game {
 						levelObject = new GameLevelWallObject();
 						break;
 					case "wasabi":
-						var texture:String = "single";
+						texture = "single";
 						if (levelObjectItem.texture) {
 							texture = levelObjectItem.texture;
 						}
 						levelObject = new GameLevelWasabiObject(texture);
+						break;
+					case "dough":
+						texture = "single";
+						if (levelObjectItem.texture) {
+							texture = levelObjectItem.texture;
+						}
+						levelObject = new GameLevelDoughObject(texture);
+						break;
+					case "soy":
+						texture = "single";
+						if (levelObjectItem.texture) {
+							texture = levelObjectItem.texture;
+						}
+						levelObject = new GameLevelSoyObject(texture);
 						break;
 					case "water":
 						levelObject = new GameLevelWaterObject();
@@ -228,6 +314,8 @@ package game {
 					if (levelObjectItem.type == "fire") {
 						this._bfxFire.addDisplayObject3D(levelObject, true);
 					}
+					
+					levelObject.playAmbientSound();
 				}
 			}
 		}
@@ -341,6 +429,37 @@ package game {
 			}
 		}
 		
+		public function addPlayerWokObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
+			if (this._levelData.getObjectInventory("wok") > 0) {
+				var object:GamePlayerWokObject = new GamePlayerWokObject();
+				object.x = x;
+				object.y = y;
+				object.rotationX = rotationX;
+				object.rotationY = rotationY;
+				object.rotationZ = rotationZ;
+				
+				/* Add object to objects viewport layer */
+				this._objectViewportLayer.addDisplayObject3D(object, true);
+				
+				/* Add object to list and set _activeObjectId to object position in list */
+				this._activePlayerObjectId = this._playerObjects.push(object)-1;
+				
+				/* Increase number of direction objects in use */
+				if (this._objectsInUseByType[object.type]) {
+					this._objectsInUseByType[object.type] += 1;
+				} else {
+					this._objectsInUseByType[object.type] = 1;
+				}
+				
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickPlayerObject);
+				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
+				
+				this._container.addChild(object);
+			} else {
+				trace("No wok objects left");
+			}
+		}
+		
 		private function _onClickPlayerObject(e:InteractiveScene3DEvent):void {
 			var playerObjectId:int = this._playerObjects.indexOf(e.displayObject3D.parent);
 			this._activePlayerObjectId = playerObjectId;
@@ -415,8 +534,12 @@ package game {
 				var gridRef:Point = this._grid.coordToGridReference(u*this._grid.width, (v*-1+1)*this._grid.height);
 				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
 				
-				this._directionObjects[this._activeDirectionObjectId].x = coord.x;
-				this._directionObjects[this._activeDirectionObjectId].y = coord.y;
+				if (this._directionObjects[this._activeDirectionObjectId].x != coord.x || this._directionObjects[this._activeDirectionObjectId].y != coord.y) {
+					this._directionObjects[this._activeDirectionObjectId].x = coord.x;
+					this._directionObjects[this._activeDirectionObjectId].y = coord.y;
+					var sound:GameSound = new GameSound(new URLRequest("resources/sounds/MarkerPlacement.mp3"));
+					sound.play(0, 1);
+				}
 				
 				/* Rotation of the game board */
 				var boardRotation:Number3D = Matrix3D.matrix2euler(this._container.transform);
@@ -484,8 +607,12 @@ package game {
 				var gridRef:Point = this._grid.coordToGridReference(u*this._grid.width, (v*-1+1)*this._grid.height);
 				var coord:Point = this._grid.gridReferenceToWorldCoord(gridRef.x, gridRef.y);
 				
-				this._playerObjects[this._activePlayerObjectId].x = coord.x;
-				this._playerObjects[this._activePlayerObjectId].y = coord.y;
+				if (this._playerObjects[this._activePlayerObjectId].x != coord.x || this._playerObjects[this._activePlayerObjectId].y != coord.y) {
+					this._playerObjects[this._activePlayerObjectId].x = coord.x;
+					this._playerObjects[this._activePlayerObjectId].y = coord.y;
+					var sound:GameSound = new GameSound(new URLRequest("resources/sounds/MarkerPlacement.mp3"));
+					sound.play(0, 1);
+				}
 				
 				if (map)
 					map.updateMarker(Math.round(u*100)/100, Math.round((v*-1+1)*100)/100);
@@ -620,6 +747,8 @@ package game {
 				var fluid:Boolean = levelObject.getAttribute("fluid");
 				var direction:String = levelObject.getAttribute("direction");
 				
+				var playerObjectInFront:*;
+				
 				/* Object is on the same tile as character */
 				if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
 					if (fatal === true) {
@@ -627,11 +756,22 @@ package game {
 						moveCharacter = false;
 					}
 					
+					playerObjectInFront = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
+					if (playerObjectInFront) {
+						trace("Object is in front of character");
+					}
+					
 					/* Check if fluid and water */
 					if (fluid === true) {						
 						/* Sink if water */
 						if (levelObject.type == "water" && this._character.container.z <= 0) {
-							this._character.animateDown(nextSegmentDistance);
+							if (playerObjectInFront && playerObjectInFront.type == "wok") {
+								playerObjectInFront.x += nextSegmentDistance;
+								killCharacter = false;
+								moveCharacter = true;
+							} else {
+								this._character.animateDown(nextSegmentDistance);
+							}
 						}
 						break;
 					} else if (levelObject.type == "fire") {
@@ -668,7 +808,7 @@ package game {
 						break;
 					}
 					
-					var playerObjectInFront:* = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
+					playerObjectInFront = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
 					if (playerObjectInFront) {
 						trace("Object is in front of character");
 					}
@@ -680,6 +820,20 @@ package game {
 							moveCharacter = false;
 						}
 						break;
+					}
+					
+					switch (levelObject.type) {
+						case "fire":
+							if (playerObjectInFront && playerObjectInFront.type == "water") {
+								this.removeLevelObject(this._levelObjects.indexOf(levelObject));
+							}
+							break;
+						case "water":
+							if (playerObjectInFront && playerObjectInFront.type == "wok") {
+								killCharacter = false;
+								moveCharacter = true;
+							}
+							break;
 					}
 					
 					if (levelObject.type == "fire") {
@@ -694,8 +848,8 @@ package game {
 			}
 			
 			/* Store reference to amount of player objects on board */
-			var playerIndex:int = this._playerObjects.length;
-			var playerObject:GamePlayerObject;
+			//var playerIndex:int = this._playerObjects.length;
+			//var playerObject:GamePlayerObject;
 			
 			/* Loop through all player objects */
 			//while (playerIndex--) {
@@ -725,8 +879,10 @@ package game {
 			//	}
 			//}
 			
-			if (killCharacter)
+			if (killCharacter) {
 				this._character.alive = false;
+				levelObject.playKillSound();
+			}
 				
 			/* Character will be within grid boundary if moved */
 			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {

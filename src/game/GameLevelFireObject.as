@@ -11,6 +11,7 @@ package game {
 		
 		private function _initObject():void {
 			this._type = "fire";
+			//this._ambientSound = new GameSound(new URLRequest("resources/sounds/objects/fire/fire_ambient.mp3"))
 			
 			var attributes:Array = new Array();
 			attributes["fatal"] = true;

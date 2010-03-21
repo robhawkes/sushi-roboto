@@ -1,11 +1,13 @@
 package game {	
 	import org.papervision3d.materials.BitmapFileMaterial;
-	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.primitives.Plane;
 
 	public class GameLevelFinishObject extends GameLevelObject {
-		public function GameLevelFinishObject() {
+		private var _orientation:String;
+		
+		public function GameLevelFinishObject(orientation:String = "top") {
 			super();
+			this._orientation = orientation;
 			this._initObject();
 		}
 		
@@ -19,9 +21,29 @@ package game {
 			material.doubleSided = true;
 			
 			var object:Plane = new Plane(material, 40, 40);
-			object.y += 20;
 			object.z -= 20;
 			object.pitch(-90);
+			
+			switch (this._orientation as String) {
+				case "top":
+					object.y += 20;
+					break;
+				case "bottom":
+					object.y -= 20;
+					break;
+				case "left":
+					object.y += 20;
+					object.rotationZ = -90;
+					break;
+				case "right":
+					object.y += 20;
+					object.rotationZ = 90;
+					break;
+				default:
+					trace("Finish default");
+					break;
+			}
+			
 			
 			this.addChild(object);
 		}

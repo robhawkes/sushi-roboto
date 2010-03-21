@@ -3,10 +3,10 @@ package game {
 	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.objects.primitives.Plane;
 	
-	public class GameLevelWasabiObject extends GameLevelObject {
+	public class GameLevelDoughObject extends GameLevelObject {
 		private var _texture:String = "single";
 		
-		public function GameLevelWasabiObject(texture:String = null) {
+		public function GameLevelDoughObject(texture:String = null) {
 			super();
 			
 			if (texture)
@@ -16,7 +16,7 @@ package game {
 		}
 		
 		private function _initObject():void {
-			this._type = "wasabi";
+			this._type = "dough";
 			
 			var attributes:Array = new Array();
 			attributes["fluid"] = true;
@@ -28,19 +28,16 @@ package game {
 			
 			switch (this._texture) {
 				case "top":
-					material = new BitmapFileMaterial("resources/textures/objects/wasabi/wasabi_top.png");
+					material = new BitmapFileMaterial("resources/textures/objects/dough/dough_top.png");
 					break;
 				case "bottom":
-					material = new BitmapFileMaterial("resources/textures/objects/wasabi/wasabi_bottom.png");
+					material = new BitmapFileMaterial("resources/textures/objects/dough/dough_bottom.png");
 					break;
-				case "left":
-					material = new BitmapFileMaterial("resources/textures/objects/wasabi/wasabi_left.png");
-					break;
-				case "right":
-					material = new BitmapFileMaterial("resources/textures/objects/wasabi/wasabi_right.png");
+				case "middle":
+					material = new BitmapFileMaterial("resources/textures/objects/dough/dough_middle.png");
 					break;
 				default:
-					material = new BitmapFileMaterial("resources/textures/objects/wasabi/wasabi_single.png");
+					material = new BitmapFileMaterial("resources/textures/objects/dough/dough_single.png");
 					break;
 			}
 			

@@ -1,4 +1,6 @@
 package game {
+	import flash.net.URLRequest;
+	
 	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.primitives.Cube;
@@ -11,6 +13,7 @@ package game {
 		
 		private function _initObject():void {
 			this._type = "wall";
+			this._killSound = new GameSound(new URLRequest("resources/sounds/objects/wall/wall_kill.mp3"))
 			
 			var attributes:Array = new Array();
 			attributes["solid"] = true;
