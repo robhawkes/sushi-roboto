@@ -68,7 +68,6 @@ package game {
 						{type: "dough", position: new Point(2, 3), texture: "bottom"},
 						{type: "dough", position: new Point(2, 4), texture: "middle"},
 						{type: "dough", position: new Point(2, 5), texture: "top"},
-						{type: "soy", position: new Point(5, 2), texture: "single"},
 						{type: "water", position: new Point(3, 1)},
 						{type: "water", position: new Point(3, 2)},
 						{type: "water", position: new Point(3, 3)},
@@ -77,7 +76,8 @@ package game {
 						{type: "water", position: new Point(4, 3)},
 						{type: "finish", position: new Point(5, 7), orientation: "bottom"});
 					
-					this._environmentObjects.push({type: "sink", position: new Point(3, 1), size: new Point(2, 3)});
+					this._environmentObjects.push({type: "sink", position: new Point(3, 1), size: new Point(2, 3)},
+						{type: "tap", position: new Point(5, 2), orientation: "left"});
 					
 					this._objectInventory["direction"] = 6;
 					this._objectInventory["water"] = 1;

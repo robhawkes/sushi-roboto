@@ -200,6 +200,12 @@ package game {
 						}
 						envObject = new GameEnvironmentSinkObject(size);
 						break;
+					case "tap":
+						if (envObjectItem.orientation) {
+							var orientation:String = envObjectItem.orientation;
+						}
+						envObject = new GameEnvironmentTapObject(orientation);
+						break;
 					default:
 						trace("There are no objects of type "+envObjectItem.type);
 						break;
