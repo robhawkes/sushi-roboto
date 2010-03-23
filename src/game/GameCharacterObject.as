@@ -1,6 +1,8 @@
 package game {
+	import org.papervision3d.materials.BitmapFileMaterial;
 	import org.papervision3d.materials.ColorMaterial;
-	import org.papervision3d.objects.primitives.PaperPlane;
+	import org.papervision3d.materials.utils.MaterialsList;
+	import org.papervision3d.objects.parsers.DAE;
 
 	public class GameCharacterObject extends GameObject {
 		public function GameCharacterObject() {
@@ -12,20 +14,21 @@ package game {
 			var material:ColorMaterial = new ColorMaterial(0x0000FF);
 
 			/* Collada madel */
-			/*var material1:BitmapFileMaterial = new BitmapFileMaterial("resources/texture.jpg");
-			var material2:BitmapFileMaterial = new BitmapFileMaterial("resources/texture2.jpg");
-			var objectMaterials:MaterialsList = new MaterialsList({Material1: material1, Material2: material2});
+			var material1:BitmapFileMaterial = new BitmapFileMaterial("resources/objects/roboto/body.jpg");
+			var objectMaterials:MaterialsList = new MaterialsList({body_jpg_img: material1});
 			var object:DAE = new DAE(true, "", true);
-			object.load("resources/robot.dae", objectMaterials);
-			object.scale = 0.1;
+			object.load("resources/objects/roboto/roboto.dae", objectMaterials);
+			this._collada = object;
+			
+			object.scale = 0.4;
 			object.rotationZ = 180;
-			object.rotationX = -90;*/
+			object.rotationX = -90;
 			
 			/* Debug model */
-			var object:PaperPlane = new PaperPlane(material, 0.1);
+			/*var object:PaperPlane = new PaperPlane(material, 0.1);
 			object.z -= 5;
 			// Rotate object so it faces forward in relation to the game board
-			object.pitch(-90);
+			object.pitch(-90);*/
 			
 			this.addChild(object);
 		}

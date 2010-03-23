@@ -14,6 +14,7 @@ package {
 	import flash.events.KeyboardEvent;
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
+	import flash.media.SoundMixer;
 	import flash.media.SoundTransform;
 	
 	import game.GameBoard;
@@ -22,6 +23,7 @@ package {
 	import game.GameMap;
 	import game.GamePapervision;
 	import game.GameRegistry;
+	import game.GameUIInventory;
 	import game.GameUILevel;
 	import game.GameUIMain;
 	
@@ -35,6 +37,7 @@ package {
 		
 		private var _mainUI:GameUIMain;
 		private var _levelUI:GameUILevel;
+		private var _inventoryUI:GameUIInventory;
 		
 		[Embed(source="resources/sounds/Game Sounds.swf", symbol="GameSoundMainLoop")]
 		private var _gameSoundMainLoop:Class;
@@ -108,11 +111,11 @@ package {
 			/* Initialise current level data */
 			this._initLevelData(levelId);	
 			
-			/* Initialise game inventory system */
-			this._initInventory();
-			
 			/* Initialise game board */
 			this._initBoard();
+			
+			/* Initialise game inventory system */
+			this._initInventory();
 			
 			/* Initialise augmented reality */
 			if (!this._flarManager) {
@@ -139,10 +142,10 @@ package {
 			
 			//var soundtrack:GameSoundMainLoop = new GameSound(new URLRequest("resources/sounds/Main Loop.mp3"));
 			this._soundtrack = new this._gameSoundMainLoop();
-			this._soundtrackTransform = new SoundTransform(0);
-			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
+			this._soundtrackTransform = new SoundTransform(0.5);
+			this._soundtrackChannel = this._soundtrack.play(0, 999, new SoundTransform(0));
 			
-			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 1, time: 4, transition: "linear"});
+			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0.5, time: 4, transition: "linear"});
 		}
 		
 		/* Game level data initialisation */
@@ -165,6 +168,12 @@ package {
 		/* Game inventory initialisation */
 		private function _initInventory():void {
 			this._inventory = new GameInventory();
+			
+			this._inventoryUI = new GameUIInventory(stage.stageWidth, stage.stageHeight);
+			this._uiSprite.addChild(this._inventoryUI.ui);
+			
+			this._inventoryUI.addEventListener("GAME_LEVELUI_OPEN", this._toggleLevelMenu);
+			this._inventoryUI.addEventListener("GAME_OBJECT_ADD_DIRECTION", this._board.addDirectionObject);
 		}
 		
 		/* Game board initialisation */
@@ -219,6 +228,7 @@ package {
 			this._levelUI = new GameUILevel(stage.stageWidth, stage.stageHeight);
 			this._uiSprite.addChild(this._levelUI.ui);
 			
+			this._levelUI.addEventListener("GAME_UI_CLOSED", this._continueGame);
 			this._levelUI.addEventListener("GAME_RESET", this._onClickMenuReset);
 			this._levelUI.addEventListener("GAME_MENU", this._onClickMenuMenu);
 		}
@@ -268,6 +278,8 @@ package {
 						this._initMap();
 						
 						this._board.populateBoard();
+						
+						this._inventoryUI.show();
 						
 						this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 					}
@@ -362,6 +374,18 @@ package {
 			}
 		}
 		
+		private function _toggleLevelMenu(e:Event):void {
+			if (!this._levelUI.ui.visible) {
+				this._pauseGame();
+				this._inventoryUI.hide();
+				this._levelUI.show();
+			} else {
+				this._continueGame();
+				this._levelUI.hide();
+				this._inventoryUI.show();
+			}
+		}
+		
 		private function _onClickMenuReset(e:Event):void {
 			this._levelUI.hide();
 			
@@ -372,6 +396,8 @@ package {
 		
 		private function _onClickMenuMenu(e:Event):void {
 			this._levelUI.hide();
+			
+			SoundMixer.stopAll();
 			
 			this._papervision.removeChildFromScene(this._board.container);
 			this._levelSprite.removeChild(this._papervision.viewport);
@@ -394,6 +420,8 @@ package {
 		
 		private function _resetGame(e:Event = null):void {
 			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._resetGame);
+			
+			SoundMixer.stopAll();
 				
 			this._play = false;
 			
@@ -408,8 +436,12 @@ package {
 			this._board.container.transform = previousBoardTransform;
 			this._papervision.addChildToScene(this._board.container);
 			
+			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
+			
 			this._board.initViewportLayers();
 			this._board.populateBoard();
+			
+			this._inventoryUI.show();
 			
 			if (!this.hasEventListener(Event.ENTER_FRAME))
 				this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
@@ -422,16 +454,18 @@ package {
 			this._soundtrackChannel.stop();
 		}
 		
-		private function _continueGame():void {
+		private function _continueGame(e:Event = null):void {
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._continueGame);
 			this._enableMarkerEvents();
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
-			this._soundtrackChannel = this._soundtrack.play(this._soundtrackPositionWhenStopped, 1);
+			this._soundtrackChannel = this._soundtrack.play(this._soundtrackPositionWhenStopped, 1, this._soundtrackTransform);
 			this._soundtrackChannel.addEventListener(Event.SOUND_COMPLETE, this._restartSoundLoop);
+			this._inventoryUI.show();
 		}
 		
 		private function _restartSoundLoop(e:Event):void {
 			this._soundtrackChannel.removeEventListener(Event.SOUND_COMPLETE, this._restartSoundLoop);
-			this._soundtrackChannel = this._soundtrack.play(0, 999);
+			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
 		}
 		
 		/* Keyboard listeners */
@@ -441,6 +475,7 @@ package {
 				case 32: // Spacebar
 					if (!this._play) {
 						this._play = true;
+						this._inventoryUI.hide();
 					} else {
 						this._play = false;
 					}
@@ -462,21 +497,10 @@ package {
 					this._board.character.container.rotationZ = -90;
 					break;
 				case 68: // d
-					/* Add new directional object */
-					if (this._board.objectsRemainingByType("direction") > 0) {
-						this._board.addDirectionObject();
-					} else {
-						trace("No more directional objects left in invetory")
-					}
+					
 					break;
 				case 71: // g
-					if (!this._levelUI.ui.visible) {
-						this._pauseGame();
-						this._levelUI.show();
-					} else {
-						this._continueGame();
-						this._levelUI.hide();
-					}
+					
 					break;
 				case 72: // h
 					this._mainUI.hide();
@@ -505,6 +529,8 @@ package {
 						this._initMap();
 						
 						this._board.populateBoard();
+						
+						this._inventoryUI.show();
 						
 						this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 					}

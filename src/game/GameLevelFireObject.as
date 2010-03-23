@@ -1,4 +1,6 @@
 package game {
+	import flash.net.URLRequest;
+	
 	import org.papervision3d.materials.ColorMaterial;
 	import org.papervision3d.materials.utils.MaterialsList;
 	import org.papervision3d.objects.primitives.Cylinder;
@@ -11,7 +13,7 @@ package game {
 		
 		private function _initObject():void {
 			this._type = "fire";
-			//this._ambientSound = new GameSound(new URLRequest("resources/sounds/objects/fire/fire_ambient.mp3"))
+			this._ambientSound = new GameSound(new URLRequest("resources/sounds/objects/fire/fire_ambient.mp3"))
 			
 			var attributes:Array = new Array();
 			attributes["fatal"] = true;

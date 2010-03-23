@@ -53,9 +53,9 @@ package game {
 					break;
 				case 2:
 					this._levelObjects.push({type: "start", position: new Point(1, 0)},
-						{type: "conveyor", position: new Point(3, 4)},
-						{type: "conveyor", position: new Point(3, 5)},
-						{type: "conveyor", position: new Point(3, 6)},
+						{type: "conveyor", position: new Point(3, 4), orientation: "bottom"},
+						{type: "conveyor", position: new Point(3, 5), orientation: "bottom"},
+						{type: "conveyor", position: new Point(3, 6), orientation: "bottom"},
 						{type: "wall", position: new Point(2, 2)},
 						{type: "wall", position: new Point(4, 5)},
 						{type: "wall", position: new Point(4, 6)},

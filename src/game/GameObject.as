@@ -2,8 +2,11 @@ package game {
 	import flash.media.SoundTransform;
 	
 	import org.papervision3d.objects.DisplayObject3D;
+	import org.papervision3d.objects.parsers.Collada;
+	import org.papervision3d.objects.parsers.DAE;
 
 	public class GameObject extends DisplayObject3D {
+		protected var _collada:DAE; 
 		protected var _interactive:Boolean = false;
 		protected var _interactiveObject:DisplayObject3D;
 		protected var _ambientSound:GameSound;
@@ -25,7 +28,11 @@ package game {
 		
 		public function playKillSound():void {
 			if (this._killSound)
-				this._killSound.play(0, 1);
+				this._killSound.play(0, 1, new SoundTransform(0.5));
+		}
+		
+		public function get collada():DAE {
+			return this._collada;
 		}
 		
 		public function get interactiveObject():DisplayObject3D {

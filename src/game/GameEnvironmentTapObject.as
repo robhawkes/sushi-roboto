@@ -1,7 +1,7 @@
 package game {
 	import org.papervision3d.materials.BitmapFileMaterial;
 	import org.papervision3d.materials.utils.MaterialsList;
-	import org.papervision3d.objects.parsers.Collada;
+	import org.papervision3d.objects.parsers.DAE;
 	
 	public class GameEnvironmentTapObject extends GameEnvironmentObject {
 		private var _orientation:String;
@@ -16,8 +16,12 @@ package game {
 			this._type = "tap";
 			
 			var materials:MaterialsList = new MaterialsList({all: new BitmapFileMaterial("resources/objects/tap/tap.jpg")});
-			var object:Collada = new Collada("resources/objects/tap/tap.dae", materials);
-			object.scale = 0.2;
+			var object:DAE = new DAE();
+			object.load("resources/objects/tap/tap.dae", materials);
+			this._collada = object;
+			//var object:Collada = new Collada("resources/objects/tap/tap.dae", materials);
+			
+			object.scale = 20;
 			object.rotationX = -90;
 			
 			switch (this._orientation) {
@@ -38,6 +42,7 @@ package game {
 					object.rotationZ = 0;
 					break;
 			}
+			
 			this.addChild(object);
 		}
 	}

@@ -5,11 +5,14 @@ package game {
 	import org.papervision3d.objects.primitives.Plane;
 	
 	public class GameLevelConveyorObject extends GameLevelObject {
+		private var _orientation:String;
+		
 		[Embed(source="resources/textures/objects/conveyor/conveyor.swf")]
 		private var _texture:Class;
 		
-		public function GameLevelConveyorObject() {
+		public function GameLevelConveyorObject(orientation:String = "up") {
 			super();
+			this._orientation = orientation;
 			this._initObject();
 		}
 		
@@ -24,6 +27,23 @@ package game {
 			
 			var material:MovieMaterial = new MovieMaterial(new this._texture(), false, true);
 			var object:Plane = new Plane(material, 40, 40);
+			
+			switch (this._orientation as String) {
+				case "top":
+					object.rotationZ = 0;
+					break;
+				case "bottom":
+					object.rotationZ = 180;
+					break;
+				case "left":
+					object.rotationZ = 90;
+					break;
+				case "right":
+					object.rotationZ = -90;
+					break;
+				default:
+					break;
+			}
 			
 			this.addChild(object);
 		}

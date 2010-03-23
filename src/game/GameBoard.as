@@ -7,16 +7,20 @@ package game {
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.utils.geom.FLARPVGeomUtils;
 	
+	import flash.events.Event;
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
+	import flash.media.SoundTransform;
 	import flash.net.URLRequest;
 	
 	import org.papervision3d.core.effects.BitmapFireEffect;
 	import org.papervision3d.core.math.Matrix3D;
 	import org.papervision3d.core.math.Number3D;
 	import org.papervision3d.core.render.data.RenderHitData;
+	import org.papervision3d.events.FileLoadEvent;
 	import org.papervision3d.events.InteractiveScene3DEvent;
 	import org.papervision3d.objects.DisplayObject3D;
+	import org.papervision3d.objects.parsers.DAE;
 	import org.papervision3d.view.layer.BitmapEffectLayer;
 	import org.papervision3d.view.layer.ViewportLayer;
 	import org.papervision3d.view.layer.util.ViewportLayerSortMode;
@@ -90,8 +94,6 @@ package game {
 				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
 				this._objectViewportLayer.alpha = 0.8;
 				this._boardViewportLayer.addLayer(this._objectViewportLayer);
-				
-				this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
 				
 				/* Enable double click mouse events */
 				this._objectViewportLayer.doubleClickEnabled = true;
@@ -177,8 +179,17 @@ package game {
 			*/
 		}
 		
+		private function _addColladaToViewportLayer(e:Event):void {
+			var collada:DAE = e.target as DAE;
+			var object:GameObject = collada.parent as GameObject;
+			
+			this._objectViewportLayer.addDisplayObject3D(object, true);
+			this._container.addChild(object);
+			object.scale = 1;
+			object.z = 0;
+		}
+		
 		private function _addCharacter():void {
-			this._container.addChild(this._character.container);
 			var characterPosition:Point = this._grid.gridReferenceToWorldCoord(1, 0);
 			this._character.moveToPoint(characterPosition.x, characterPosition.y);
 			
@@ -187,6 +198,9 @@ package game {
 			this._character.container.rotationZ = -1440;
 			
 			Tweener.addTween(this._character.container, {scale: 1, rotationZ: 0, time: 3, delay: 1, transition: "easeInOutExpo"});
+			
+			this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
+			this._container.addChild(this._character.container);
 		}
 		
 		private function _addEnvironmentObjects():void {
@@ -232,12 +246,15 @@ package game {
 					switch (envObjectItem.type) {
 						case "sink":
 							this._objectViewportLayerBottom.addDisplayObject3D(envObject, true);
+							this._container.addChild(envObject);
+							break;
+						case "tap":
+							envObject.collada.addEventListener(FileLoadEvent.LOAD_COMPLETE, this._addColladaToViewportLayer);
 							break;
 						default:
 							this._objectViewportLayer.addDisplayObject3D(envObject, true);
+							this._container.addChild(envObject);
 					}
-					
-					this._container.addChild(envObject);
 				}
 			}
 		}
@@ -247,14 +264,20 @@ package game {
 				//trace("Place "+levelObjectItem.type+" at "+levelObjectItem.position);
 				var levelObject:GameLevelObject;
 				var texture:String;
+				var orientation:String
 				
 				switch (levelObjectItem.type) {
 					case "conveyor":
-						levelObject = new GameLevelConveyorObject();
+						if (levelObjectItem.orientation) {
+							orientation = levelObjectItem.orientation;
+							levelObject = new GameLevelConveyorObject(orientation);
+						} else {
+							levelObject = new GameLevelConveyorObject();
+						}
 						break;
 					case "finish":
 						if (levelObjectItem.orientation) {
-							var orientation:String = levelObjectItem.orientation;
+							orientation = levelObjectItem.orientation;
 							levelObject = new GameLevelFinishObject(orientation);
 						} else {
 							levelObject = new GameLevelFinishObject();
@@ -308,7 +331,7 @@ package game {
 					levelObject.z = -300;
 					levelObject.scale = 0;
 					
-					Tweener.addTween(levelObject, {scale: 1, z: previousZ, time: 0.6, delay: 1+Math.random()*1, transition: "easeOutExpo"});
+					Tweener.addTween(levelObject, {scale: 1, z: previousZ, time: 0.6, delay: 1+Math.random()*2, transition: "easeOutExpo"});
 					
 					/* Add object to objects viewport layer */
 					this._objectViewportLayer.addDisplayObject3D(levelObject, true);
@@ -327,6 +350,8 @@ package game {
 		}
 		
 		private function removeLevelObject(levelObjectId:int):void {
+			trace(levelObjectId);
+			
 			if (levelObjectId == this._activeLevelObjectId)
 				this._activeLevelObjectId = -1;
 			
@@ -345,30 +370,33 @@ package game {
 		}
 		
 		public function addDirectionObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
-			if (this._levelData.getObjectInventory("direction") > 0) {
-				var object:GameDirectionObject = new GameDirectionObject();
-				object.x = x;
-				object.y = y;
-				object.rotationX = rotationX;
-				object.rotationY = rotationY;
-				object.rotationZ = rotationZ;
+			/* Add new directional object */
+			if (this.objectsRemainingByType("direction") > 0) {
+				if (this._levelData.getObjectInventory("direction") > 0) {
+					var object:GameDirectionObject = new GameDirectionObject();
+					object.x = x;
+					object.y = y;
+					object.rotationX = rotationX;
+					object.rotationY = rotationY;
+					object.rotationZ = rotationZ;
+					
+					this._objectViewportLayer.addDisplayObject3D(object, true);
+					
+					/* Add object to list and set _activeObjectId to object position in list */
+					this._activeDirectionObjectId = this._directionObjects.push(object)-1;
+					
+					/* Increase number of direction objects in use */
+					if (this._objectsInUseByType[object.type]) {
+						this._objectsInUseByType[object.type] += 1;
+					} else {
+						this._objectsInUseByType[object.type] = 1;
+					}
+					
+					object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickDirectionalObject);
+					object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickDirectionalObject);
 				
-				this._objectViewportLayer.addDisplayObject3D(object, true);
-				
-				/* Add object to list and set _activeObjectId to object position in list */
-				this._activeDirectionObjectId = this._directionObjects.push(object)-1;
-				
-				/* Increase number of direction objects in use */
-				if (this._objectsInUseByType[object.type]) {
-					this._objectsInUseByType[object.type] += 1;
-				} else {
-					this._objectsInUseByType[object.type] = 1;
+					this._container.addChild(object);
 				}
-				
-				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickDirectionalObject);
-				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickDirectionalObject);
-			
-				this._container.addChild(object);
 			}
 		}
 		
@@ -402,6 +430,19 @@ package game {
 			this._directionObjects.splice(directionObjectId, 1);
 			
 			this._container.removeChild(object);
+		}
+		
+		public function addPlayerObjectByType(object:String):void {
+			if (this.objectsRemainingByType(object) > 0) {
+				switch (object) {
+					case "water":
+						this.addPlayerWaterObject();
+						break;
+					case "wok":
+						this.addPlayerWokObject();
+						break;
+				}
+			}
 		}
 		
 		public function addPlayerWaterObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
@@ -444,9 +485,6 @@ package game {
 				object.rotationY = rotationY;
 				object.rotationZ = rotationZ;
 				
-				/* Add object to objects viewport layer */
-				this._objectViewportLayer.addDisplayObject3D(object, true);
-				
 				/* Add object to list and set _activeObjectId to object position in list */
 				this._activePlayerObjectId = this._playerObjects.push(object)-1;
 				
@@ -460,7 +498,7 @@ package game {
 				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_CLICK, this._onClickPlayerObject);
 				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
 				
-				this._container.addChild(object);
+				object.collada.addEventListener(FileLoadEvent.LOAD_COMPLETE, this._addColladaToViewportLayer);
 			} else {
 				trace("No wok objects left");
 			}
@@ -544,7 +582,7 @@ package game {
 					this._directionObjects[this._activeDirectionObjectId].x = coord.x;
 					this._directionObjects[this._activeDirectionObjectId].y = coord.y;
 					var sound:GameSound = new GameSound(new URLRequest("resources/sounds/MarkerPlacement.mp3"));
-					sound.play(0, 1);
+					sound.play(0, 1, new SoundTransform(0.5));
 				}
 				
 				/* Rotation of the game board */
@@ -554,18 +592,27 @@ package game {
 				/* Calculated rotation for object */
 				var objectRotation:Number = markerRotation.z-boardRotation.z;
 				
-				if (objectRotation >= -46 && objectRotation <= 45) {
+				if (objectRotation >= -46 && objectRotation <= 45 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 0) {
 					//trace(0);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = 0;
-				} else if (objectRotation >= 46 && objectRotation <= 135) {
+					playDirectionSwishSound();
+				} else if (objectRotation >= 46 && objectRotation <= 135 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 90) {
 					//trace(90);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = 90;
-				} else if ((objectRotation >= 136 && objectRotation <= 180) || (objectRotation >= -180 && objectRotation <= -135)) {
+					playDirectionSwishSound();
+				} else if ((objectRotation >= 136 && objectRotation <= 180 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 180) || (objectRotation >= -180 && objectRotation <= -135 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 180)) {
 					//trace(180);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = 180;
-				} else if (objectRotation >= -134 && objectRotation <= -45) {
+					playDirectionSwishSound();
+				} else if (objectRotation >= -134 && objectRotation <= -45 && this._directionObjects[this._activeDirectionObjectId].rotationZ != -90) {
 					//trace(-90);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = -90;
+					playDirectionSwishSound();
+				}
+				
+				function playDirectionSwishSound():void {
+					var swishSound:GameSound = new GameSound(new URLRequest("resources/sounds/objects/direction/direction_turn.mp3"));
+					swishSound.play(0, 1, new SoundTransform(1));
 				}
 				
 				if (map)
@@ -840,12 +887,6 @@ package game {
 								moveCharacter = true;
 							}
 							break;
-					}
-					
-					if (levelObject.type == "fire") {
-						if (playerObjectInFront && playerObjectInFront.type == "water") {
-							this.removeLevelObject(this._levelObjects.indexOf(levelObject));
-						}
 					}
 				/* Object is not on the same or next tile as character */ 
 				} else {
