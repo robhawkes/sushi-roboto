@@ -28,7 +28,7 @@ package game {
 		
 		public function playKillSound():void {
 			if (this._killSound)
-				this._killSound.play(0, 1, new SoundTransform(0.5));
+				this._killSound.play(0, 1, new SoundTransform(1));
 		}
 		
 		public function get collada():DAE {

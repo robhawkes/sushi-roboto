@@ -33,8 +33,8 @@ package game {
 			switch (this._levelId) {
 				case 1:
 					this._levelObjects.push({type: "start", position: new Point(1, 0)},
-						{type: "wall", position: new Point(1, 3)},
-						{type: "wall", position: new Point(2, 3)},
+						{type: "wall", position: new Point(1, 3), invisible: true},
+						{type: "wall", position: new Point(2, 3), invisible: true},
 						{type: "wall", position: new Point(2, 1)},
 						{type: "wall", position: new Point(2, 5)},
 						{type: "wall", position: new Point(4, 5)},
@@ -47,8 +47,10 @@ package game {
 						{type: "wasabi", position: new Point(4, 2), texture: "top"},
 						{type: "finish", position: new Point(6, 0)});
 					
-					this._objectInventory["direction"] = 6;
+					this._objectInventory["direction"] = 8;
 					this._objectInventory["water"] = 3;
+					
+					this._environmentObjects.push({type: "chopsticks", position: new Point(3, 3), orientation: "left"});
 					
 					break;
 				case 2:
@@ -57,10 +59,8 @@ package game {
 						{type: "conveyor", position: new Point(3, 5), orientation: "bottom"},
 						{type: "conveyor", position: new Point(3, 6), orientation: "bottom"},
 						{type: "wall", position: new Point(2, 2)},
-						{type: "wall", position: new Point(4, 5)},
-						{type: "wall", position: new Point(4, 6)},
-						{type: "wall", position: new Point(5, 5)},
-						{type: "wall", position: new Point(6, 5)},
+						{type: "wall", position: new Point(4, 5), invisible: true},
+						{type: "wall", position: new Point(4, 6), invisible: true},
 						{type: "fire", position: new Point(5, 3)},
 						{type: "fire", position: new Point(6, 2)},
 						{type: "wasabi", position: new Point(1, 2), texture: "right"},
@@ -77,7 +77,8 @@ package game {
 						{type: "finish", position: new Point(5, 7), orientation: "bottom"});
 					
 					this._environmentObjects.push({type: "sink", position: new Point(3, 1), size: new Point(2, 3)},
-						{type: "tap", position: new Point(5, 2), orientation: "left"});
+						{type: "tap", position: new Point(5, 2), orientation: "left"},
+						{type: "chopsticks", position: new Point(4, 5), orientation: "top"});
 					
 					this._objectInventory["direction"] = 6;
 					this._objectInventory["water"] = 1;
@@ -95,6 +96,10 @@ package game {
 				return this._objectInventory[item];
 			
 			return 0;
+		}
+		
+		public function get levelId():int {
+			return this._levelId;
 		}
 		
 		public function get width():int {

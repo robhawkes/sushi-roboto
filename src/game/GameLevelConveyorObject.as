@@ -47,5 +47,9 @@ package game {
 			
 			this.addChild(object);
 		}
+		
+		public function get orientation():String {
+			return this._orientation;
+		}
 	}
 }

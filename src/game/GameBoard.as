@@ -7,6 +7,8 @@ package game {
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.utils.geom.FLARPVGeomUtils;
 	
+	import flash.display.MovieClip;
+	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
@@ -35,16 +37,43 @@ package game {
 		private var _completed:Boolean;
 		private var _container:DisplayObject3D;
 		private var _directionObjects:Vector.<GameDirectionObject>;
-		private var _objectViewportLayerBottom:ViewportLayer;
 		private var _grid:GameGrid;
 		private var _inventory:GameInventory;
 		private var _levelData:GameLevelData;
 		private var _levelObjects:Vector.<GameLevelObject>;
 		private var _objectsInUseByType:Array;
 		private var _objectViewportLayer:ViewportLayer;
+		private var _objectViewportLayerBottom:ViewportLayer;
+		private var _objectViewportLayerTop:ViewportLayer;
 		private var _playerObjects:Vector.<GamePlayerObject>;
 		private var _registry:GameRegistry; 
 		private var _savedState:Object;
+		private var _subtitleSprite:Sprite;
+		
+		/* Subtitles assets */
+		[Embed(source="assets/subtitles/level1_setup.swf")]
+		private var _subtitleLevel1Setup:Class;
+		[Embed(source="assets/subtitles/level1_firstDirectionMarker.swf")]
+		private var _subtitleLevel1FirstDirectionMarker:Class;
+		
+		[Embed(source="assets/subtitles/level2_setup.swf")]
+		private var _subtitleLevel2Setup:Class;
+		
+		[Embed(source="assets/subtitles/death_fire.swf")]
+		private var _subtitleDeathFire:Class;
+		[Embed(source="assets/subtitles/death_water.swf")]
+		private var _subtitleDeathWater:Class;
+		[Embed(source="assets/subtitles/death_wasabi.swf")]
+		private var _subtitleDeathWasabi:Class;
+		[Embed(source="assets/subtitles/death_solid.swf")]
+		private var _subtitleDeathSolid:Class;
+		[Embed(source="assets/subtitles/death_boundary.swf")]
+		private var _subtitleDeathBoundary:Class;
+		
+		[Embed(source="assets/subtitles/marker_water.swf")]
+		private var _subtitleMarkerWater:Class;
+		[Embed(source="assets/subtitles/marker_wok.swf")]
+		private var _subtitleMarkerWok:Class;
 		
 		public function GameBoard() {
 			this._registry = GameRegistry.getInstance();
@@ -68,7 +97,7 @@ package game {
 			if (this._levelData)
 				this._grid = new GameGrid(this._levelData.width, this._levelData.height, this._levelData.rows, this._levelData.columns);
 			
-			this._character = new GameCharacter();
+			this._subtitleSprite = new Sprite();
 		}
 		
 		public function initViewportLayers():void {
@@ -94,6 +123,9 @@ package game {
 				this._objectViewportLayer = new ViewportLayer(papervision.viewport, null);
 				this._objectViewportLayer.alpha = 0.8;
 				this._boardViewportLayer.addLayer(this._objectViewportLayer);
+				
+				this._objectViewportLayerTop = new ViewportLayer(papervision.viewport, null);
+				this._boardViewportLayer.addLayer(this._objectViewportLayerTop);
 				
 				/* Enable double click mouse events */
 				this._objectViewportLayer.doubleClickEnabled = true;
@@ -123,6 +155,7 @@ package game {
 			Tweener.addTween(this._grid.container, {scale: 1, time: 0.3, delay: 0.5, transition: "easeOutBack"})
 			
 			/* Add character to board */
+			this._character = new GameCharacter();
 			this._addCharacter();
 			
 			/* Add level objects to board */
@@ -131,52 +164,19 @@ package game {
 			/* Add environment objects */
 			this._addEnvironmentObjects();
 			
-			/* Add board environment */
-			/*var platesMaterials:MaterialsList = new MaterialsList({Material1: new BitmapFileMaterial("resources/objects/plates/Lathe_NURBS.4Ambient_Occlusion.jpg")});
-			var plates:Collada = new Collada("resources/objects/plates/plates.dae", platesMaterials);
-			plates.scale = 0.004;
-			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
-			plates.x = coord.x;
-			plates.y = coord.y;
-			plates.rotationZ = 180;
-			plates.rotationX = -90;
-			this._container.addChild(plates);
-			this._boardViewportLayer.addDisplayObject3D(plates, true);*/
-			
-			/*var noodlesMaterial1:BitmapFileMaterial = new BitmapFileMaterial("resources/objects/noodles/Extrude_NURBSSurface_Color.jpg");
-			var noodlesMaterials:MaterialsList = new MaterialsList({Material1: noodlesMaterial1});
-			var noodles:Collada = new Collada("resources/objects/noodles/noodle.dae", noodlesMaterials);
-			noodles.scale = 0.002;
-			coord = this.grid.gridReferenceToWorldCoord(0, 1);
-			noodles.x = coord.x;
-			noodles.y = coord.y;
-			//noodles.rotationZ = 180;
-			noodles.rotationX = -90;
-			this._container.addChild(noodles);
-			this._boardViewportLayer.addDisplayObject3D(noodles, true);*/
-			
-			/*var wokMaterials:MaterialsList = new MaterialsList({all: new ColorMaterial(0xFF0000)});
-			var wok:Collada = new Collada("resources/objects/wok/wok.dae", wokMaterials);
-			wok.scale = 0.001;
-			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
-			wok.x = coord.x;
-			wok.y = coord.y;
-			wok.rotationZ = 180;
-			wok.rotationX = -90;
-			this._container.addChild(wok);
-			this._boardViewportLayer.addDisplayObject3D(wok, true);
-			*/
-			
-			/*var tapMaterials:MaterialsList = new MaterialsList({all: new BitmapFileMaterial("resources/objects/tap/tap.jpg")});
-			var tap:Collada = new Collada("resources/objects/tap/tap.dae", tapMaterials);
-			tap.scale = 0.3;
-			var coord:Point = this.grid.gridReferenceToWorldCoord(0, 4);
-			tap.x = coord.x;
-			tap.y = coord.y;
-			tap.rotationX = -90;
-			this._container.addChild(tap);
-			this._boardViewportLayer.addDisplayObject3D(tap, true);
-			*/
+			/* Level setup subtitle */
+			var subtitleId:int;
+			switch (this._levelData.levelId) {
+				case 1: // Level 1
+					subtitleId = 0;
+					break;
+				case 2: // Level 2
+					subtitleId = 2;
+					break;
+			}
+			if (subtitleId >= 0) {
+				this._showSubtitle(subtitleId);
+			}
 		}
 		
 		private function _addColladaToViewportLayer(e:Event):void {
@@ -184,6 +184,16 @@ package game {
 			var object:GameObject = collada.parent as GameObject;
 			
 			this._objectViewportLayer.addDisplayObject3D(object, true);
+			this._container.addChild(object);
+			object.scale = 1;
+			object.z = 0;
+		}
+		
+		private function _addColladaToViewportLayerTop(e:Event):void {
+			var collada:DAE = e.target as DAE;
+			var object:GameObject = collada.parent as GameObject;
+			
+			this._objectViewportLayerTop.addDisplayObject3D(object, true);
 			this._container.addChild(object);
 			object.scale = 1;
 			object.z = 0;
@@ -199,15 +209,27 @@ package game {
 			
 			Tweener.addTween(this._character.container, {scale: 1, rotationZ: 0, time: 3, delay: 1, transition: "easeInOutExpo"});
 			
-			this._objectViewportLayer.addDisplayObject3D(this._character.container, true);
-			this._container.addChild(this._character.container);
+			this._character.container.collada.addEventListener(FileLoadEvent.LOAD_COMPLETE, this._addColladaToViewportLayer);
 		}
 		
 		private function _addEnvironmentObjects():void {
 			for each (var envObjectItem:Object in this._levelData.environmentObjects) {
 				var envObject:GameEnvironmentObject;
+				var orientation:String;
 				
 				switch (envObjectItem.type) {
+					case "chopsticks":
+						if (envObjectItem.orientation) {
+							orientation = envObjectItem.orientation;
+						}
+						envObject = new GameEnvironmentChopsticksObject(orientation);
+						break;
+					case "plate":
+						if (envObjectItem.orientation) {
+							orientation = envObjectItem.orientation;
+						}
+						envObject = new GameEnvironmentPlateObject();
+						break;
 					case "sink":
 						if (envObjectItem.size) {
 							var size:Point = envObjectItem.size;	
@@ -216,7 +238,7 @@ package game {
 						break;
 					case "tap":
 						if (envObjectItem.orientation) {
-							var orientation:String = envObjectItem.orientation;
+							orientation = envObjectItem.orientation;
 						}
 						envObject = new GameEnvironmentTapObject(orientation);
 						break;
@@ -248,6 +270,8 @@ package game {
 							this._objectViewportLayerBottom.addDisplayObject3D(envObject, true);
 							this._container.addChild(envObject);
 							break;
+						case "chopsticks":
+						case "plate":
 						case "tap":
 							envObject.collada.addEventListener(FileLoadEvent.LOAD_COMPLETE, this._addColladaToViewportLayer);
 							break;
@@ -290,7 +314,11 @@ package game {
 						levelObject = new GameLevelStartObject();
 						break;
 					case "wall":
-						levelObject = new GameLevelWallObject();
+						var invisible:Boolean = false;
+						if (levelObjectItem.invisible) {
+							invisible = levelObjectItem.invisible;
+						}
+						levelObject = new GameLevelWallObject(invisible);
 						break;
 					case "wasabi":
 						texture = "single";
@@ -349,9 +377,7 @@ package game {
 			}
 		}
 		
-		private function removeLevelObject(levelObjectId:int):void {
-			trace(levelObjectId);
-			
+		private function removeLevelObject(levelObjectId:int):void {	
 			if (levelObjectId == this._activeLevelObjectId)
 				this._activeLevelObjectId = -1;
 			
@@ -396,6 +422,10 @@ package game {
 					object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickDirectionalObject);
 				
 					this._container.addChild(object);
+					
+					if (this._objectsInUseByType[object.type] == 1) {
+						this._showSubtitle(1);
+					}
 				}
 			}
 		}
@@ -471,6 +501,8 @@ package game {
 				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
 				
 				this._container.addChild(object);
+				
+				this._showSubtitle(7);
 			} else {
 				trace("No water objects left");
 			}
@@ -499,6 +531,8 @@ package game {
 				object.interactiveObject.addEventListener(InteractiveScene3DEvent.OBJECT_DOUBLE_CLICK, this._onDoubleClickPlayerObject);
 				
 				object.collada.addEventListener(FileLoadEvent.LOAD_COMPLETE, this._addColladaToViewportLayer);
+				
+				this._showSubtitle(8);
 			} else {
 				trace("No wok objects left");
 			}
@@ -771,6 +805,7 @@ package game {
 						
 			/* Character toggles */
 			var killCharacter:Boolean = false;
+			var keepCharacterAlive:Boolean = false;
 			var moveCharacter:Boolean = true;
 			
 			/* Store reference to amount of level objects on board */
@@ -802,6 +837,8 @@ package game {
 				
 				var playerObjectInFront:*;
 				
+				var subtitleId:int;
+				
 				/* Object is on the same tile as character */
 				if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
 					if (fatal === true) {
@@ -810,36 +847,47 @@ package game {
 					}
 					
 					playerObjectInFront = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
-					if (playerObjectInFront) {
-						trace("Object is in front of character");
-					}
 					
 					/* Check if fluid and water */
 					if (fluid === true) {						
 						/* Sink if water */
-						if (levelObject.type == "water" && this._character.container.z <= 0) {
+						if ((levelObject.type == "water" || levelObject.type == "wasabi") && this._character.container.z <= 0) {
 							if (playerObjectInFront && playerObjectInFront.type == "wok") {
-								playerObjectInFront.x += nextSegmentDistance;
+								playerObjectInFront.x += (nextSegmentDistance*nextSegDistanceX);
+								playerObjectInFront.y += (nextSegmentDistance*nextSegDistanceY);
 								killCharacter = false;
 								moveCharacter = true;
+								keepCharacterAlive = true;
+								break;
 							} else {
 								this._character.animateDown(nextSegmentDistance);
+								switch (levelObject.type) {
+									case "water":
+										subtitleId = 4;
+										break;
+									case "wasabi":
+										subtitleId = 5;
+										break;
+								}
 							}
 						}
-						break;
 					} else if (levelObject.type == "fire") {
 						if (this._character.container.z <= 0) {
 							this._character.animateUp(nextSegmentDistance*2);
+							subtitleId = 3;
 						}
 					} else if (levelObject.type == "conveyor") {
-						moveCharacter = false;
+						var conveyorObject:GameLevelConveyorObject = levelObject as GameLevelConveyorObject;
+						moveCharacter = false;					
+						killCharacter = false;
+						keepCharacterAlive = true;
 						
 						var coord:Point = this._grid.gridReferenceToWorldCoord(characterGridRef.x, characterGridRef.y);
-						switch (direction) {
-							case "up":
+						switch (conveyorObject.orientation) {
+							case "top":
 								coord.y += nextSegmentDistance;
 								break;
-							case "down":
+							case "bottom":
 								coord.y -= nextSegmentDistance;
 								break;
 							case "left":
@@ -850,6 +898,28 @@ package game {
 								break;
 						}
 						
+						var directionObjectOnTile:* = this._directionObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
+						if (directionObjectOnTile) {
+							switch (directionObjectOnTile.rotationZ) {
+								case 0: // Up
+									coord.x = character.container.x;
+									coord.y += nextSegmentDistance;
+									break;
+								case 180: // Down
+									coord.x = character.container.x;
+									coord.y -= nextSegmentDistance;
+									break;
+								case 90: // Left
+									coord.y = character.container.y;
+									coord.x -= nextSegmentDistance;
+									break;
+								case -90: // Right
+									coord.y = character.container.y;
+									coord.x += nextSegmentDistance;
+									break;
+							}	
+						}
+						
 						this._character.animateToPoint(coord.x, coord.y);
 					}
 				/* Object is on the tile in front of character */ 
@@ -857,13 +927,14 @@ package game {
 					/* Check if finish line */
 					if (finish === true) {
 						this._completed = true;
+						keepCharacterAlive = true;
 						this._character.animateForward(nextSegmentDistance);
 						break;
 					}
 					
 					playerObjectInFront = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
 					if (playerObjectInFront) {
-						trace("Object is in front of character");
+						//trace("Object is in front of character");
 					}
 					
 					/* Check if object is solid */
@@ -871,8 +942,8 @@ package game {
 						if (fatal === true) {
 							killCharacter = true;
 							moveCharacter = false;
+							subtitleId = 6;
 						}
-						break;
 					}
 					
 					switch (levelObject.type) {
@@ -881,6 +952,7 @@ package game {
 								this.removeLevelObject(this._levelObjects.indexOf(levelObject));
 							}
 							break;
+						case "wasabi":
 						case "water":
 							if (playerObjectInFront && playerObjectInFront.type == "wok") {
 								killCharacter = false;
@@ -893,48 +965,23 @@ package game {
 					
 				}
 			}
-			
-			/* Store reference to amount of player objects on board */
-			//var playerIndex:int = this._playerObjects.length;
-			//var playerObject:GamePlayerObject;
-			
-			/* Loop through all player objects */
-			//while (playerIndex--) {
-				/* Reference to current player object */
-			//	playerObject = this._playerObjects[playerIndex];
-				
-				/* Grid reference of player object */
-			//	var playerObjectGridRef:Point = this._grid.worldCoordToGridReference(playerObject.x, playerObject.y);
-				
-				/* Distance in grid segments between character and player object */
-			//	var playerObjectDistanceSegmentsX:int = playerObjectGridRef.x-characterGridRef.x;
-			//	var playerObjectDistanceSegmentsY:int = playerObjectGridRef.y-characterGridRef.y;
-				
-				/* Distance in coords between character and player object */
-			//	var playerObjectDistanceCoordX:int = playerObjectGridRef.x-this._character.container.x;
-			//	var playerObjectDistanceCoordY:int = playerObjectGridRef.y-this._character.container.y;
-				
-				/* Object is on the same tile as character */
-			//	if (playerObjectDistanceSegmentsY == 0 && playerObjectDistanceSegmentsX == 0) {
-					//trace(levelObject.type);
-					/* Object is on the tile in front of character */ 
-			//	} else if (playerObjectDistanceSegmentsY == nextSegDistanceY && playerObjectDistanceSegmentsX == nextSegDistanceX) {					
-					
-					/* Object is not on the same or next tile as character */ 
-			//	} else {
-					
-			//	}
-			//}
-			
-			if (killCharacter) {
-				this._character.alive = false;
-				levelObject.playKillSound();
-			}
 				
 			/* Character will be within grid boundary if moved */
 			if (!this._grid.gridRefIsOutsideBoundary(nextSegGrid.x, nextSegGrid.y)) {
 				if (moveCharacter)
 					this._character.animateForward(nextSegmentDistance);
+			} else {
+				killCharacter = true;
+				subtitleId = 9;
+			}
+			
+			if (killCharacter && !keepCharacterAlive) {
+				if (subtitleId >= 0) {
+					this._showSubtitle(subtitleId);
+				}
+				
+				this._character.alive = false;
+				levelObject.playKillSound();
 			}
 		}
 		
@@ -964,6 +1011,25 @@ package game {
 			return this._playerObjects.length;
 		}
 		
+		private function _directionObjectAtGridReference(target:Point):* {
+			/* Store reference to amount of player objects on board */
+			var objectIndex:int = this._directionObjects.length;
+			var object:GameDirectionObject;
+			var objectGridRef:Point
+			
+			/* Loop through all player objects */
+			while (objectIndex--) {
+				/* Reference to current player object */
+				object = this._directionObjects[objectIndex];
+				objectGridRef = this.grid.worldCoordToGridReference(object.x, object.y);
+				
+				if (objectGridRef.x == target.x && objectGridRef.y == target.y)
+					return object;
+			}
+			
+			return false;
+		}
+		
 		private function _playerObjectAtGridReference(target:Point):* {
 			/* Store reference to amount of player objects on board */
 			var playerIndex:int = this._playerObjects.length;
@@ -981,6 +1047,62 @@ package game {
 			}
 			
 			return false;
+		}
+		
+		private function _showSubtitle(subtitleId:int):void {
+			var subtitle:MovieClip;
+			
+			switch (subtitleId) {
+				case 0: // Level 1 Setup
+					subtitle = new this._subtitleLevel1Setup();
+					break;
+				case 1: // Level 1 First Direction Marker
+					subtitle = new this._subtitleLevel1FirstDirectionMarker();
+					break;
+				case 2: // Level 2 Setup
+					subtitle = new this._subtitleLevel2Setup();
+					break;
+				case 3: // Death Fire
+					subtitle = new this._subtitleDeathFire();
+					break;
+				case 4: // Death Water
+					subtitle = new this._subtitleDeathWater();
+					break;
+				case 5: // Death Wasabi
+					subtitle = new this._subtitleDeathWasabi();
+					break;
+				case 6: // Death Solid
+					subtitle = new this._subtitleDeathSolid();
+					break;
+				case 7: // Marker Water
+					subtitle = new this._subtitleMarkerWater();
+					break;
+				case 8: // Marker Wok
+					subtitle = new this._subtitleMarkerWok();
+					break;
+				case 9: // Death Boundary
+					subtitle = new this._subtitleDeathBoundary();
+					break;
+			}
+			
+			if (this._subtitleSprite.numChildren > 0) {
+				this._subtitleSprite.removeChildAt(0);
+			}
+			
+			subtitle.x =+ 10;
+			subtitle.y =+ 10;
+			
+			this._subtitleSprite.addChild(subtitle);
+			
+			this._subtitleSprite.alpha = 0;
+			this._subtitleSprite.visible = true;
+			
+			Tweener.autoOverwrite = true;
+			Tweener.addTween(this._subtitleSprite, {alpha: 1, time: 1, transition: "easeInOut", onComplete: this._hideSubtitle});
+		}
+		
+		private function _hideSubtitle():void {
+			Tweener.addTween(this._subtitleSprite, {alpha: 0, visible: false, time: 1, delay: 3, transition: "easeInOut"});
 		}
 		
 		public function set activeDirectionObjectId(id:int):void {
@@ -1005,6 +1127,10 @@ package game {
 		
 		public function get grid():GameGrid {
 			return this._grid;
+		}
+		
+		public function get subtitleSprite():Sprite {
+			return this._subtitleSprite;
 		}
 	}
 }

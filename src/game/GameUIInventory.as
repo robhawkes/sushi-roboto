@@ -25,16 +25,41 @@ package game {
 				directionButton.addEventListener(MouseEvent.CLICK, this._onClickDirectionButton);
 			}
 			
+			if (this._inventoryMenu.getChildByName("waterButton")) {
+				var waterButton:MovieClip = this._inventoryMenu.getChildByName("waterButton") as MovieClip;
+				waterButton.addEventListener(MouseEvent.CLICK, this._onClickWaterButton);
+			}
+			
+			if (this._inventoryMenu.getChildByName("wokButton")) {
+				var wokButton:MovieClip = this._inventoryMenu.getChildByName("wokButton") as MovieClip;
+				wokButton.addEventListener(MouseEvent.CLICK, this._onClickWokButton);
+			}
+			
 			var menuButton:MovieClip = this._inventoryMenu.getChildByName("menuButton") as MovieClip;
 			menuButton.addEventListener(MouseEvent.CLICK, this._onClickMenuButton);
+			
+			var playButton:MovieClip = this._inventoryMenu.getChildByName("playButton") as MovieClip;
+			playButton.addEventListener(MouseEvent.CLICK, this._onClickPlayButton);
 		}
 		
 		private function _onClickMenuButton(e:MouseEvent):void {
 			dispatchEvent(new Event("GAME_LEVELUI_OPEN"));
 		}
 		
+		private function _onClickPlayButton(e:MouseEvent):void {
+			dispatchEvent(new Event("GAME_PLAY"));
+		}
+		
 		private function _onClickDirectionButton(e:MouseEvent):void {
 			dispatchEvent(new Event("GAME_OBJECT_ADD_DIRECTION"));
+		}
+		
+		private function _onClickWaterButton(e:MouseEvent):void {
+			dispatchEvent(new Event("GAME_OBJECT_ADD_WATER"));
+		}
+		
+		private function _onClickWokButton(e:MouseEvent):void {
+			dispatchEvent(new Event("GAME_OBJECT_ADD_WOK"));
 		}
 		
 		public function show():void {
@@ -46,6 +71,12 @@ package game {
 			
 			function onHideComplete():void {
 				dispatchEvent(new Event("GAME_INVENTORYUI_CLOSED"));
+			}
+		}
+		
+		public function removeButton(buttonName:String):void {
+			if (this._inventoryMenu.getChildByName(buttonName)) {
+				this._inventoryMenu.removeChild(this._inventoryMenu.getChildByName(buttonName));
 			}
 		}
 		

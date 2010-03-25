@@ -1,4 +1,6 @@
 package game {
+	import caurina.transitions.Tweener;
+	
 	import flash.net.URLRequest;
 	
 	import org.papervision3d.materials.ColorMaterial;
@@ -26,6 +28,16 @@ package game {
 			var object:Plane = new Plane(material, 40, 40);
 			
 			this.addChild(object);
+			
+			this._animateUp();
+		}
+		
+		private function _animateUp():void {
+			Tweener.addTween(this, {z: 1, time: Math.random()*1, transition: "easeInOutExpo", onComplete: this._animateDown});
+		}
+		
+		private function _animateDown():void {
+			Tweener.addTween(this, {z: -1, time: Math.random()*1, transition: "easeInOutExpo", onComplete: this._animateUp});
 		}
 	}
 }

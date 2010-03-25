@@ -27,6 +27,11 @@
       <libraryPathEntry kind="3" linkType="1" path="src/assets/LevelMenu.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="src/assets/MainMenu.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="src/assets/InventoryMenu.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="src/assets/HelpLevelMarker.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="src/assets/LevelMenuDead.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="src/assets/LevelMenuWin.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="src/assets/GameCompleteScreen.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="src/assets/CreditsMenu.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>

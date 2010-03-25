@@ -9,13 +9,17 @@ package {
 	import com.transmote.flar.marker.FLARMarker;
 	import com.transmote.flar.marker.FLARMarkerEvent;
 	
+	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.events.TimerEvent;
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.media.SoundMixer;
 	import flash.media.SoundTransform;
+	import flash.net.URLRequest;
+	import flash.utils.Timer;
 	
 	import game.GameBoard;
 	import game.GameInventory;
@@ -23,8 +27,14 @@ package {
 	import game.GameMap;
 	import game.GamePapervision;
 	import game.GameRegistry;
+	import game.GameSound;
+	import game.GameUIComplete;
+	import game.GameUICredits;
+	import game.GameUIHelpMarker;
 	import game.GameUIInventory;
 	import game.GameUILevel;
+	import game.GameUILevelDead;
+	import game.GameUILevelWin;
 	import game.GameUIMain;
 	
 	import org.papervision3d.core.math.Matrix3D;
@@ -34,13 +44,29 @@ package {
 	public class Game extends Sprite {
 		private var _uiSprite:Sprite;
 		private var _levelSprite:Sprite;
+		private var _subtitleSprite:Sprite;
+		
+		[Embed(source="assets/IntroScene.swf")]
+		private var _intro:Class;
+		private var _introScene:MovieClip;
+		private var _introFrames:int;
+		private var _introSprite:Sprite;
+		
+		[Embed(source="assets/EndCredits.swf")]
+		private var _credits:Class;
+		private var _creditsSprite:Sprite;
 		
 		private var _mainUI:GameUIMain;
 		private var _levelUI:GameUILevel;
+		private var _levelUIDead:GameUILevelDead;
+		private var _levelUIWin:GameUILevelWin;
+		private var _levelMarkerUI:GameUIHelpMarker;
 		private var _inventoryUI:GameUIInventory;
+		private var _completeUI:GameUIComplete;
+		private var _creditsUI:GameUICredits;
 		
-		[Embed(source="resources/sounds/Game Sounds.swf", symbol="GameSoundMainLoop")]
-		private var _gameSoundMainLoop:Class;
+		[Embed(source="resources/sounds/Game Sounds.swf", symbol="GameSoundBuildMode")]
+		private var _gameSoundBuildLoop:Class;
 		
 		private var _soundtrack:Sound;
 		private var _soundtrackTransform:SoundTransform;
@@ -83,17 +109,46 @@ package {
 			this._levelSprite = new Sprite();
 			this.addChild(this._levelSprite);
 			
+			this._subtitleSprite = new Sprite();
+			this.addChild(this._subtitleSprite);
+			
+			this._creditsSprite = new Sprite();
+			this.addChild(this._creditsSprite);
+			
 			this._uiSprite = new Sprite();
 			this.addChild(this._uiSprite);
 			
+			this._introSprite = new Sprite();
+			this.addChild(this._introSprite);
+			
+			/*
+			this._introScene = new this._intro();
+			this._introSprite.addChild(this._introScene);
+			
+			var introTimer:Timer = new Timer(21500, 1);
+			introTimer.addEventListener(TimerEvent.TIMER_COMPLETE, this._introComplete);
+			introTimer.start();
+			*/
+			
+			this._initMainMenu();
+			
+			/* Initialise keyboard listeners */
+			this._initKeyboardListeners();
+		}
+		
+		private function _introComplete(event:TimerEvent = null):void {
+			this._initMainMenu();
+			Tweener.addTween(this._introSprite, {alpha: 0, visible: false, time: 1, transition: "linear"});
+		}
+		
+		private function _initMainMenu(event:Event = null):void {
 			this._mainUI = new GameUIMain();
 			this._uiSprite.addChild(this._mainUI.ui);
 			
 			this._mainUI.addEventListener("GAME_LEVEL_1", this._onClickLevel1);
 			this._mainUI.addEventListener("GAME_LEVEL_2", this._onClickLevel2);
 			
-			/* Initialise keyboard listeners */
-			this._initKeyboardListeners();
+			this._mainUI.show();
 		}
 		
 		private function _onClickLevel1(e:Event):void {
@@ -117,6 +172,16 @@ package {
 			/* Initialise game inventory system */
 			this._initInventory();
 			
+			/* Temporary procedural code limiting objects by level */
+			switch (levelId) {
+				case 1:
+					this._inventoryUI.removeButton("wokButton");
+					break;
+				case 2:
+					
+					break;
+			}
+			
 			/* Initialise augmented reality */
 			if (!this._flarManager) {
 				this._initFLAR();
@@ -139,14 +204,20 @@ package {
 				
 				this._enableMarkerEvents();
 			}
+
+			/* Show level marker reminder */
+			this._levelMarkerUI = new GameUIHelpMarker(stage.stageWidth, stage.stageHeight);
+			this._uiSprite.addChild(this._levelMarkerUI.ui);
+			this._levelMarkerUI.show();
 			
-			//var soundtrack:GameSoundMainLoop = new GameSound(new URLRequest("resources/sounds/Main Loop.mp3"));
-			this._soundtrack = new this._gameSoundMainLoop();
+			this._soundtrack = new this._gameSoundBuildLoop();
 			this._soundtrackTransform = new SoundTransform(0.5);
 			this._soundtrackChannel = this._soundtrack.play(0, 999, new SoundTransform(0));
 			
-			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0.5, time: 4, transition: "linear"});
+			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0.5, time: 4, delay: 2, transition: "linear"});
 		}
+		
+		
 		
 		/* Game level data initialisation */
 		private function _initLevelData(levelId:int):void {
@@ -172,13 +243,28 @@ package {
 			this._inventoryUI = new GameUIInventory(stage.stageWidth, stage.stageHeight);
 			this._uiSprite.addChild(this._inventoryUI.ui);
 			
+			this._addInventoryEvents();
+		}
+		
+		private function _addInventoryEvents():void {
+			this._inventoryUI.addEventListener("GAME_PLAY", this._playGame);
 			this._inventoryUI.addEventListener("GAME_LEVELUI_OPEN", this._toggleLevelMenu);
 			this._inventoryUI.addEventListener("GAME_OBJECT_ADD_DIRECTION", this._board.addDirectionObject);
+			this._inventoryUI.addEventListener("GAME_OBJECT_ADD_WATER", this._board.addPlayerWaterObject);
+			this._inventoryUI.addEventListener("GAME_OBJECT_ADD_WOK", this._board.addPlayerWokObject);
+		}
+		
+		private function _removeInventoryEvents():void {
+			this._inventoryUI.removeEventListener("GAME_LEVELUI_OPEN", this._toggleLevelMenu);
+			this._inventoryUI.removeEventListener("GAME_OBJECT_ADD_DIRECTION", this._board.addDirectionObject);
+			this._inventoryUI.removeEventListener("GAME_OBJECT_ADD_WATER", this._board.addPlayerWaterObject);
+			this._inventoryUI.removeEventListener("GAME_OBJECT_ADD_WOK", this._board.addPlayerWokObject);
 		}
 		
 		/* Game board initialisation */
 		private function _initBoard():void {
 			this._board = new GameBoard();
+			this._subtitleSprite.addChild(this._board.subtitleSprite);
 		}
 		
 		/* Augmented reality initialisation */
@@ -221,6 +307,12 @@ package {
 			
 			/* Initialise game level UI */
 			this._initLevelUI();
+			
+			/* Initialise game level UI dead */
+			this._initLevelUIDead();
+			
+			/* Initialise game level UI win */
+			this._initLevelUIWin();
 		}
 		
 		/* Level UI */
@@ -231,6 +323,32 @@ package {
 			this._levelUI.addEventListener("GAME_UI_CLOSED", this._continueGame);
 			this._levelUI.addEventListener("GAME_RESET", this._onClickMenuReset);
 			this._levelUI.addEventListener("GAME_MENU", this._onClickMenuMenu);
+		}
+		
+		/* Level UI Dead */
+		private function _initLevelUIDead():void {
+			this._levelUIDead = new GameUILevelDead(stage.stageWidth, stage.stageHeight);
+			this._uiSprite.addChild(this._levelUIDead.ui);
+			
+			this._levelUIDead.addEventListener("GAME_RESET", this._onClickMenuReset);
+			this._levelUIDead.addEventListener("GAME_MENU", this._onClickMenuMenu);
+		}
+		
+		/* Level UI Win */
+		private function _initLevelUIWin():void {
+			this._levelUIWin = new GameUILevelWin(stage.stageWidth, stage.stageHeight);
+			this._uiSprite.addChild(this._levelUIWin.ui);
+			
+			this._levelUIWin.addEventListener("GAME_NEXT_LEVEL", this._onClickMenuNextLevel);
+			this._levelUIWin.addEventListener("GAME_MENU", this._onClickMenuMenu);
+		}
+		
+		/* Credits UI */
+		private function _initCreditsUI():void {
+			this._creditsUI = new GameUICredits(stage.stageWidth, stage.stageHeight);
+			this._uiSprite.addChild(this._creditsUI.ui);
+			
+			this._creditsUI.addEventListener("GAME_MENU", this._onClickMenuMenu);
 		}
 		
 		/* Keyboard listeners initialisation */
@@ -274,6 +392,8 @@ package {
 				case _boardPatternId: // Board marker
 					trace("Added board marker");
 					if (!this._map || this._map == null) {
+						this._levelMarkerUI.hide();
+						
 						/* Initialise game map */
 						this._initMap();
 						
@@ -332,19 +452,31 @@ package {
 			/* Game is playing and character is alive */
 			if (this._play && this._board.character.alive) {
 				if (this._board.completed) {
-					trace("You win!");
+					//trace("You win!");
 					this._play = false;
 					
 					/* Show win scenario UI */
+					Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0.1, time: 0.5, transition: "linear"});
+					
+					this._disableMarkerEvents();
+					this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+					
+					this._levelUIWin.show();
 				} else {				
 					/* Update board objects */
 					this._board.updateObjects();
 				}
 			} else if (this._play && !this._board.character.alive) {
-				trace("Character is dead");
+				//trace("Character is dead");
 				this._play = false;
 				
 				/* Show lose scenario UI */
+				Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0.1, time: 0.5, transition: "linear"});
+				
+				this._disableMarkerEvents();
+				this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+				
+				this._levelUIDead.show();
 			}
 			
 			this._papervision.render();
@@ -386,8 +518,90 @@ package {
 			}
 		}
 		
+		private function _onClickMenuNextLevel(e:Event):void {
+			var levelId:int = this._levelData.levelId;
+			
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._resetGame);
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._continueGame);
+			
+			this._levelUI.hide();
+			this._levelUIDead.hide();
+			this._levelUIWin.hide();
+			
+			SoundMixer.stopAll();
+			
+			this._papervision.removeChildFromScene(this._board.container);
+			this._levelSprite.removeChild(this._papervision.viewport);
+			this._papervision.resetViewport();
+			
+			this.removeChild(this._levelSprite);
+			this._levelSprite = new Sprite();
+			this.addChildAt(this._levelSprite, 0);
+			
+			this._levelSprite.addChild(this._papervision.viewport);
+			
+			this._play = false;
+			this._board = null;
+			this._levelData = null;
+			this._map = null;
+			this._registry = null;
+			
+			var nextLevelId:int;
+			switch (levelId) {
+				case 1:
+					nextLevelId = 2;
+					this._initLevel(2);
+					break;
+				case 2:
+					/* Load win screen and credits */
+					this._completeUI = new GameUIComplete(stage.stageWidth, stage.stageHeight);
+					this._uiSprite.addChild(this._completeUI.ui);
+					this._completeUI.show();
+					var completeSound:GameSound = new GameSound(new URLRequest("resources/sounds/Completed.mp3"));
+					completeSound.play(0, 1);
+					
+					var creditsTimer:Timer = new Timer(4000, 1);
+					creditsTimer.addEventListener(TimerEvent.TIMER_COMPLETE, this._showCredits);
+					creditsTimer.start();
+					
+					break;
+			}
+		}
+		
+		private function _showCredits(event:TimerEvent = null):void {
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._resetGame);
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._continueGame);
+			this._levelUI.hide();
+			
+			this._levelUIDead.hide();
+			this._levelUIWin.hide();
+			this._completeUI.hide();
+			
+			this._disableMarkerEvents();
+			this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
+			
+			SoundMixer.stopAll();
+			
+			this._play = false;
+			this._board = null;
+			this._levelData = null;
+			this._map = null;
+			this._registry = null;
+			
+			this._soundtrack = new GameSound(new URLRequest("resources/sounds/MainMenu.mp3"));
+			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
+			
+			var credits:MovieClip = new this._credits();
+			this._creditsSprite.addChild(credits);
+			
+			this._creditsSprite.visible = true;
+			this._initCreditsUI();
+		}
+		
 		private function _onClickMenuReset(e:Event):void {
 			this._levelUI.hide();
+			this._levelUIDead.hide();
+			this._levelUIDead.hide();
 			
 			this._enableMarkerEvents();
 			
@@ -395,11 +609,23 @@ package {
 		}
 		
 		private function _onClickMenuMenu(e:Event):void {
+			if (this._creditsUI) {
+				this._creditsUI.hide();
+				this._creditsSprite.visible = false;
+			}
+			
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._resetGame);
+			this._levelUI.removeEventListener("GAME_UI_CLOSED", this._continueGame);
 			this._levelUI.hide();
+			
+			this._levelUIDead.hide();
+			this._levelUIWin.hide();
 			
 			SoundMixer.stopAll();
 			
-			this._papervision.removeChildFromScene(this._board.container);
+			if (this._papervision && this._board) {
+				this._papervision.removeChildFromScene(this._board.container);
+			}
 			this._levelSprite.removeChild(this._papervision.viewport);
 			this._papervision.resetViewport();
 			
@@ -436,11 +662,13 @@ package {
 			this._board.container.transform = previousBoardTransform;
 			this._papervision.addChildToScene(this._board.container);
 			
+			this._soundtrack = new this._gameSoundBuildLoop();
 			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
 			
 			this._board.initViewportLayers();
 			this._board.populateBoard();
 			
+			this._addInventoryEvents();
 			this._inventoryUI.show();
 			
 			if (!this.hasEventListener(Event.ENTER_FRAME))
@@ -448,6 +676,7 @@ package {
 		}
 		
 		private function _pauseGame():void {
+			this._levelUI.addEventListener("GAME_UI_CLOSED", this._continueGame);
 			this._disableMarkerEvents();
 			this.removeEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 			this._soundtrackPositionWhenStopped = this._soundtrackChannel.position;
@@ -459,13 +688,41 @@ package {
 			this._enableMarkerEvents();
 			this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
 			this._soundtrackChannel = this._soundtrack.play(this._soundtrackPositionWhenStopped, 1, this._soundtrackTransform);
-			this._soundtrackChannel.addEventListener(Event.SOUND_COMPLETE, this._restartSoundLoop);
+			this._soundtrackChannel.addEventListener(Event.SOUND_COMPLETE, this._restartSoundtrack);
 			this._inventoryUI.show();
 		}
 		
-		private function _restartSoundLoop(e:Event):void {
-			this._soundtrackChannel.removeEventListener(Event.SOUND_COMPLETE, this._restartSoundLoop);
+		private function _playSoundtrack():void {
 			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
+		}
+		
+		private function _stopSoundtrack():void {
+			
+		}
+		
+		private function _restartSoundtrack(e:Event):void {
+			this._soundtrackChannel.removeEventListener(Event.SOUND_COMPLETE, this._restartSoundtrack);
+			this._soundtrackChannel = this._soundtrack.play(0, 999, this._soundtrackTransform);
+		}
+		
+		private function _playGame(e:Event = null):void {
+			this._inventoryUI.hide();
+			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0, time: 0.5, transition: "linear"});
+			var playSound:GameSound = new GameSound(new URLRequest("resources/sounds/StartPlaying.mp3"));
+			var playSoundChannel:SoundChannel = playSound.play(0, 1, new SoundTransform(0.5));
+			playSoundChannel.addEventListener(Event.SOUND_COMPLETE, this._startPlayingGame);
+		}
+		
+		private function _startPlayingGame(e:Event = null):void {
+			this._soundtrack = new GameSound(new URLRequest("resources/sounds/PlayModeLoop.mp3"));
+			this._soundtrackChannel = this._soundtrack.play(0, 999, new SoundTransform(0));
+			Tweener.addTween(this._soundtrackChannel, {_sound_volume: 0.5, time: 1, delay: 0.5, transition: "linear"});
+			
+			this._play = true;
+		}
+		
+		private function _stopPlayingGame(e:Event = null):void {
+			this._play = false;
 		}
 		
 		/* Keyboard listeners */
@@ -473,28 +730,14 @@ package {
 			//trace(e.keyCode);
 			switch (e.keyCode) {
 				case 32: // Spacebar
-					if (!this._play) {
-						this._play = true;
-						this._inventoryUI.hide();
-					} else {
-						this._play = false;
-					}
 					break;
 				case 38: // Up arrow
-					trace("Forward");
-					this._board.character.container.rotationZ = 0;
 					break;
 				case 40: // Down arrow
-					trace("Backward");
-					this._board.character.container.rotationZ = 180;
 					break;
 				case 37: // Left arrow
-					trace("Left");
-					this._board.character.container.rotationZ = 90;
 					break;
 				case 39: // Right arrow
-					trace("Right");
-					this._board.character.container.rotationZ = -90;
 					break;
 				case 68: // d
 					
@@ -506,25 +749,13 @@ package {
 					this._mainUI.hide();
 					break;
 				case 79: // o
-					/* Add new wok object */
-					if (this._board.objectsRemainingByType("wok") > 0) {
-						this._board.addPlayerWokObject();
-					} else {
-						trace("No more wok objects left in invetory")
-					}
 					break;
 				case 82: // r
-					if (!this._map) {
-						/* Initialise game map */
-						this._initMap();
-						
-						this._board.populateBoard();
-						
-						this.addEventListener(Event.ENTER_FRAME, this._onEnterFrame);
-					}
 					break;
 				case 83: // s
 					if (!this._map || this._map == null) {
+						this._levelMarkerUI.hide();
+						
 						/* Initialise game map */
 						this._initMap();
 						
@@ -536,12 +767,6 @@ package {
 					}
 					break;
 				case 87: // w
-					/* Add new water object */
-					if (this._board.objectsRemainingByType("water") > 0) {
-						this._board.addPlayerWaterObject();
-					} else {
-						trace("No more water objects left in invetory")
-					}
 					break;
 			}
 		}

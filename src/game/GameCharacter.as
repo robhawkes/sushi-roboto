@@ -12,11 +12,20 @@ package game {
 		
 		private function _initCharacter3D():void {
 			this._container = new GameCharacterObject();
+			this._walkBounceUp();
 		}
 		
 		public function moveToPoint(x:int, y:int):void {
 			this._container.x = x;
 			this._container.y = y;
+		}
+		
+		private function _walkBounceUp():void {
+			Tweener.addTween(this._container, {z: 2, time: 0.5, transition: "linear", onComplete: this._walkBounceDown});
+		}
+		
+		private function _walkBounceDown():void {
+			Tweener.addTween(this._container, {z: 0, time: 0.5, transition: "linear", onComplete: this._walkBounceUp});
 		}
 		
 		public function animateToPoint(x:int, y:int, time:Number = 1):void {

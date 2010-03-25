@@ -6,8 +6,11 @@ package game {
 	import org.papervision3d.objects.primitives.Cube;
 
 	public class GameLevelWallObject extends GameLevelObject {
-		public function GameLevelWallObject() {
+		private var _invisible:Boolean;
+		
+		public function GameLevelWallObject(invisible:Boolean = false) {
 			super();
+			this._invisible = invisible;
 			this._initObject();
 		}
 		
@@ -21,13 +24,15 @@ package game {
 			
 			this._setAttributes(attributes);
 			
-			var material:ColorMaterial = new ColorMaterial(0x60C0FF);
-			var materialsList:MaterialsList = new MaterialsList({all: material});
-			
-			var object:Cube = new Cube(materialsList, 40, 40, 40);
-			object.z -= 0.5 * 40;
-			
-			this.addChild(object);
+			if (!this._invisible) {
+				var material:ColorMaterial = new ColorMaterial(0x60C0FF);
+				var materialsList:MaterialsList = new MaterialsList({all: material});
+				
+				var object:Cube = new Cube(materialsList, 40, 40, 40);
+				object.z -= 0.5 * 40;
+				
+				this.addChild(object);
+			}
 		}
 	}
 }

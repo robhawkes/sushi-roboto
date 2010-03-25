@@ -18,7 +18,7 @@ package game {
 			this._type = "sink";
 			
 			var material:ColorMaterial = new ColorMaterial(0x60C0FF);
-			var materialBottom:ColorMaterial = new ColorMaterial(0xFF0000);
+			var materialBottom:ColorMaterial = new ColorMaterial(0x3398D1);
 			var materialsList:MaterialsList = new MaterialsList({all: material, front: materialBottom});
 			
 			var object:Cube = new Cube(materialsList, 40*this._size.x, 40, 40*this._size.y, 1, 1, 1, Cube.ALL, Cube.BACK);
