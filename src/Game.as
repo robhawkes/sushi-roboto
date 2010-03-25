@@ -121,16 +121,12 @@ package {
 			this._introSprite = new Sprite();
 			this.addChild(this._introSprite);
 			
-			/*
 			this._introScene = new this._intro();
 			this._introSprite.addChild(this._introScene);
 			
 			var introTimer:Timer = new Timer(21500, 1);
 			introTimer.addEventListener(TimerEvent.TIMER_COMPLETE, this._introComplete);
 			introTimer.start();
-			*/
-			
-			this._initMainMenu();
 			
 			/* Initialise keyboard listeners */
 			this._initKeyboardListeners();

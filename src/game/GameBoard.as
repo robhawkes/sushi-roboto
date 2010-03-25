@@ -476,7 +476,7 @@ package game {
 		}
 		
 		public function addPlayerWaterObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
-			if (this._levelData.getObjectInventory("water") > 0) {
+			if (this._levelData.getObjectInventory("water") > 0 && this.objectsRemainingByType("water") > 0) {
 				var object:GamePlayerWaterObject = new GamePlayerWaterObject();
 				object.x = x;
 				object.y = y;
@@ -509,7 +509,7 @@ package game {
 		}
 		
 		public function addPlayerWokObject(x:int = 0, y:int = 0, z:int = 0, rotationX:int = 0, rotationY:int = 0, rotationZ:int = 0):void {
-			if (this._levelData.getObjectInventory("wok") > 0) {
+			if (this._levelData.getObjectInventory("wok") > 0 && this.objectsRemainingByType("wok") > 0) {
 				var object:GamePlayerWokObject = new GamePlayerWokObject();
 				object.x = x;
 				object.y = y;
@@ -587,16 +587,6 @@ package game {
 			
 			/* Change X rotation to correct angle */
 			this._container.pitch(180);
-			
-			/*
-			trace("Scale: "+this._container.scale);
-			trace("RotationX: "+this._container.rotationX);
-			trace("RotationY: "+this._container.rotationY);
-			trace("RotationZ: "+this._container.rotationZ);
-			trace("X: "+this._container.x);
-			trace("Y: "+this._container.y);
-			trace("Z: "+this._container.z);
-			*/
 		}
 		
 		public function updateActiveDirectionObject(marker:FLARMarker, stageWidth:int = 0, stageHeight:int = 0):void {
@@ -627,19 +617,15 @@ package game {
 				var objectRotation:Number = markerRotation.z-boardRotation.z;
 				
 				if (objectRotation >= -46 && objectRotation <= 45 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 0) {
-					//trace(0);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = 0;
 					playDirectionSwishSound();
 				} else if (objectRotation >= 46 && objectRotation <= 135 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 90) {
-					//trace(90);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = 90;
 					playDirectionSwishSound();
 				} else if ((objectRotation >= 136 && objectRotation <= 180 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 180) || (objectRotation >= -180 && objectRotation <= -135 && this._directionObjects[this._activeDirectionObjectId].rotationZ != 180)) {
-					//trace(180);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = 180;
 					playDirectionSwishSound();
 				} else if (objectRotation >= -134 && objectRotation <= -45 && this._directionObjects[this._activeDirectionObjectId].rotationZ != -90) {
-					//trace(-90);
 					this._directionObjects[this._activeDirectionObjectId].rotationZ = -90;
 					playDirectionSwishSound();
 				}
@@ -812,6 +798,8 @@ package game {
 			var levelIndex:int = this._levelObjects.length;
 			var levelObject:GameLevelObject;
 			
+			var subtitleId:int;
+			
 			/* Loop through all level objects */
 			while (levelIndex--) {
 				/* Reference to current level object */
@@ -837,8 +825,6 @@ package game {
 				
 				var playerObjectInFront:*;
 				
-				var subtitleId:int;
-				
 				/* Object is on the same tile as character */
 				if (levelObjectDistanceSegmentsY == 0 && levelObjectDistanceSegmentsX == 0) {
 					if (fatal === true) {
@@ -849,16 +835,15 @@ package game {
 					playerObjectInFront = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
 					
 					/* Check if fluid and water */
-					if (fluid === true) {						
+					if (fluid === true) {
 						/* Sink if water */
-						if ((levelObject.type == "water" || levelObject.type == "wasabi") && this._character.container.z <= 0) {
+						if (levelObject.type == "water" || levelObject.type == "wasabi") {
 							if (playerObjectInFront && playerObjectInFront.type == "wok") {
 								playerObjectInFront.x += (nextSegmentDistance*nextSegDistanceX);
 								playerObjectInFront.y += (nextSegmentDistance*nextSegDistanceY);
 								killCharacter = false;
 								moveCharacter = true;
 								keepCharacterAlive = true;
-								break;
 							} else {
 								this._character.animateDown(nextSegmentDistance);
 								switch (levelObject.type) {
@@ -929,7 +914,6 @@ package game {
 						this._completed = true;
 						keepCharacterAlive = true;
 						this._character.animateForward(nextSegmentDistance);
-						break;
 					}
 					
 					playerObjectInFront = this._playerObjectAtGridReference(this.grid.worldCoordToGridReference(levelObject.x, levelObject.y));
@@ -976,7 +960,7 @@ package game {
 			}
 			
 			if (killCharacter && !keepCharacterAlive) {
-				if (subtitleId >= 0) {
+				if (subtitleId > 0) {
 					this._showSubtitle(subtitleId);
 				}
 				
